@@ -1,6 +1,7 @@
 import os
 import tkinter as tk
 from tkinter import scrolledtext, filedialog, messagebox, simpledialog, END, INSERT
+from datetime import datetime
 import pickle
 import tempfile
 
@@ -31,6 +32,7 @@ class Interface:
         self.directory_path_var = tk.StringVar(self.window)
         self.change_notice_number_var = tk.StringVar(self.window)
         self.change_notice_date_var = tk.StringVar(self.window)
+        self.set_name_var = tk.StringVar(self.window)
 
         self.extractor = ChangesExtractor()
         self.creator = ChangeTextCreator()
@@ -93,27 +95,30 @@ class Interface:
         self.open_button = tk.Button(self.window, text="Указать", command=self.get_directory_path)
         self.open_button.grid(sticky="S", row=8, column=2)
 
+        self.set_name_label = tk.Label(self.window, textvariable=self.set_name_var, wraplength=300)
+        self.set_name_label.grid(sticky="W", row=9, column=0, columnspan=3, padx=7)
+
         self.change_notice_number_label = tk.Label(self.window, text="Номер ИИ:")
-        self.change_notice_number_label.grid(sticky="W", row=9, column=0, padx=7)
+        self.change_notice_number_label.grid(sticky="W", row=10, column=0, padx=7)
 
         self.change_notice_date_label = tk.Label(self.window, text="Дата ИИ:")
-        self.change_notice_date_label.grid(sticky="W", row=9, column=1, padx=7)
+        self.change_notice_date_label.grid(sticky="W", row=10, column=1, padx=7)
 
         self.change_notice_number_entry = tk.Entry(self.window, width=20, justify='right', textvariable=self.change_notice_number_var)
-        self.change_notice_number_entry.grid(sticky="W", row=10, column=0, padx=7)
+        self.change_notice_number_entry.grid(sticky="W", row=11, column=0, padx=7)
 
         self.change_notice_date_entry = tk.Entry(self.window, width=20, justify='right', textvariable=self.change_notice_date_var)
-        self.change_notice_date_entry.grid(sticky="W", row=10, column=1, padx=7)
+        self.change_notice_date_entry.grid(sticky="W", row=11, column=1, padx=7)
 
         self.generate_title_button = tk.Button(self.window, text="Собрать титул", command=self._create_title,
                                                state='disabled')
-        self.generate_title_button.grid(row=11, column=0, pady=10)
+        self.generate_title_button.grid(row=12, column=0, pady=10)
 
         self.result_field = tk.scrolledtext.ScrolledText(self.window, width=45, height=8)
-        self.result_field.grid(row=12, columnspan=3, padx=7)
+        self.result_field.grid(row=13, columnspan=3, padx=7)
 
         self.settings_button = tk.Button(self.window, text="Настройки", command=self._open_settings)
-        self.settings_button.grid(row=13, column=2, pady=10, padx=7)
+        self.settings_button.grid(row=14, column=2, pady=10, padx=7)
 
         self.directory_path_var.trace("w", self._handle_entry)
         self.signature_path_var.trace("w", self._handle_entry)
@@ -130,11 +135,16 @@ class Interface:
         paths = [i.name for i in f]
         self.signature_path_var.set(", ".join(paths))
 
+    def _get_set_name(self):
+        set_name = simpledialog.askstring("Название комплекта", "Введите название основного комплекта:")
+        self.set_name_var.set(set_name)
+
     def get_directory_path(self):
         path = os.path.abspath(filedialog.askdirectory())
         self.directory_path_var.set(path)
         if self._restore_set_changes():
             self.changes = self.extractor.extract(self.directory_path_var.get())
+            self._get_set_name()
             self._ask_for_number_of_changes()
         self.print_message(self.changes)
 
@@ -202,7 +212,11 @@ class Interface:
             )
             if not decision:
                 with open(set_settings_path, "rb") as f:
-                    self.changes = pickle.load(f)
+                    restored_info = pickle.load(f)
+                    self.changes = restored_info["changes"]
+                    self.set_name_var.set(restored_info["set_name"])
+                    self.change_notice_number_var.set(restored_info["change_notice_number"])
+                    self.change_notice_date_var.set(restored_info["change_notice_date"])
             return decision
         else:
             return True
@@ -211,7 +225,13 @@ class Interface:
         if self.directory_path_var.get() and self.changes:
             set_settings_path = os.path.join(self.directory_path_var.get(), "config")
             with open(set_settings_path, "wb") as f:
-                pickle.dump(self.changes, f)
+                saved_info = {
+                    "set_name": self.set_name_var.get(),
+                    "change_notice_number": self.change_notice_number_var.get(),
+                    "change_notice_date": self.change_notice_date_var.get(),
+                    "changes": self.changes
+                }
+                pickle.dump(saved_info, f)
 
     def _ask_for_number_of_changes(self):
         for set_, set_documents in self.changes.items():
@@ -238,12 +258,33 @@ class Interface:
             "change_notice_number": self.change_notice_number_var.get(),
             "change_notice_date": self.change_notice_date_var.get(),
             "change_notice_sets": "\n".join(self.changes.keys()),
-            "change_due_date": "12.01.2013",
-            "set_name": "ТЕСТЕТСТСТСТСТСТСТСТС",
-            "attachment_sheet_quantity": "13",
-            "sheets_total": "3",
+            "change_due_date": self._add_months(datetime.strptime(self.change_notice_date_var.get(), "%d.%m.%Y"), 1).strftime("%d.%m.%Y"),
+            "set_name": self.set_name_var.get(),
+            "attachment_sheet_quantity": self._count_attachments(),
+            "sheets_total": "{{ sheets_total }}",
+            "author": self._get_author_string()
         }
         self.creator.create(change_notice_info, self.changes)
+
+    @staticmethod
+    def _add_months(current_date, months_to_add):
+        new_date = datetime(current_date.year + (current_date.month + months_to_add - 1) // 12,
+                            (current_date.month + months_to_add - 1) % 12 + 1,
+                            current_date.day, current_date.hour, current_date.minute, current_date.second)
+        return new_date
+
+    def _count_attachments(self):
+        num = 0
+        for _, set_info in self.changes.items():
+            for _, document_info in set_info.items():
+                for change in document_info["changes"]:
+                    num += len(change["pages"])
+        return num
+
+    def _get_author_string(self):
+        return self.last_name_ru_var.get() + " " + self.name_ru_var.get()[0] + "." + self.surname_ru_var.get()[0] \
+                 + ". /\n" + self.last_name_en_var.get() + " " + self.name_en_var.get()[0] + "." \
+                 + self.surname_en_var.get()[0] + "."
 
     def on_exit(self):
         self._save_settings()

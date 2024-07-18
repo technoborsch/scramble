@@ -15,7 +15,7 @@ class ChangesExtractor:
         changes = {}
         for doc_path in doc_paths:
             doc = docx.Document(doc_path)
-            set_code = doc.tables[0].rows[1].cells[0].text.split("-")[0]
+            set_code = doc.tables[0].rows[1].cells[0].text.split("-")[0].replace("\n", "")
 
             for table in doc.tables:
                 for row in table.rows[1:-2]:
@@ -25,7 +25,7 @@ class ChangesExtractor:
                     if "изм" in revision:
                         if set_code not in changes.keys():
                             changes[set_code] = {}
-                        doc_code = row[0].text
+                        doc_code = row[0].text.replace("\n", "")
                         number_of_sheets = split_revision[0].split("/")[1].split(".")[1]
                         if doc_code not in changes[set_code].keys():
                             doc_ru_name, doc_eng_name = row[1].text.split("/")
@@ -124,7 +124,7 @@ class ChangesExtractor:
 
     @staticmethod
     def _fill_geometry(doc_code):
-        doc_letters = doc_code.split("-")[1][:-4].upper()
+        doc_letters = doc_code.split("-")[1][:-4].upper().strip("\n")
         return SIZES_COORDINATES[DOC_SIZES_MAP[doc_letters]]
 
 

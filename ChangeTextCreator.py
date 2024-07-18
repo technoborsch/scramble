@@ -35,26 +35,19 @@ class ChangeTextCreator:
                         cancel_pages += change["pages"]
 
                 if patch_pages:
-                    if len(patch_pages) == document_info["number_of_sheets"]:
-                        russian_text += f"- {document_code} — документ изменен;\n"
-                        english_text += f"- {document_code} — the document has been changed;\n"
-                    else:
-                        for page in patch_pages:
-                            russian_text += "\t- страница " \
-                                            + str(document_info['set_position']) + "." + str(page[0]) \
-                                            + " — внесены изменения в документ " \
-                                              f"«{document_info['doc_ru_name']}» (количество участков - {page[1]});\n"
-                            english_text += "\t- sheet " \
-                                            + str(document_info['set_position']) + "." + str(page[0]) \
-                                            + " — changes have been made to the document " \
-                                              f"«{document_info['doc_eng_name']}» (number of sections - {page[1]});\n"
+                    for page in patch_pages:
+                        russian_text += "\t- лист " \
+                                        + str(document_info['set_position']) + "." + str(page[0]) \
+                                        + " — внесены изменения в документ " \
+                                          f"«{document_info['doc_ru_name']}» (количество участков - {page[1]});\n"
+                        english_text += "\t- sheet " \
+                                        + str(document_info['set_position']) + "." + str(page[0]) \
+                                        + " — changes have been made to the document " \
+                                          f"«{document_info['doc_eng_name']}» (number of sections - {page[1]});\n"
 
                 if replace_pages:
-                    if len(replace_pages) == document_info["number_of_sheets"]:
-                        russian_text += f"\t- {document_code} — весь документ был заменен;\n"
-                        english_text += f"\t- {document_code} — the whole document has been replaced;\n"
-                    elif len(replace_pages) == 1:
-                        russian_text += "\t- страница " \
+                    if len(replace_pages) == 1:
+                        russian_text += "\t- лист " \
                                         + str(document_info['set_position']) + "." + str(replace_pages[0]) \
                                         + " — внесены изменения в документ " \
                                           f"«{document_info['doc_ru_name']}» (лист заменен);\n"
@@ -64,33 +57,27 @@ class ChangeTextCreator:
                                           f"«{document_info['doc_eng_name']}» (sheet has been replaced);\n"
                     else:
                         zipped_pages = self._zip_pages(document_info["set_position"], replace_pages)
-                        russian_text += f"\t- страницы {zipped_pages} — внесены изменения в документ " \
+                        russian_text += f"\t- листы {zipped_pages} — внесены изменения в документ " \
                                         f"«{document_info['doc_ru_name']}» (листы заменены);\n"
                         english_text += f"\t- sheets {zipped_pages} — changes have been made to the document " \
                                         f"«{document_info['doc_eng_name']}» (sheets have been replaced);\n"
 
                 if cancel_pages:
-                    if len(cancel_pages) == document_info["number_of_sheets"]:
-                        russian_text += f"\t- {document_code} — аннулирован;\n"
-                        english_text += f"\t- {document_code} — cancelled;\n"
-                    elif len(cancel_pages) == 1:
-                        russian_text += "\t- страница " \
+                    if len(cancel_pages) == 1:
+                        russian_text += "\t- лист " \
                                         + str(document_info['set_position']) + "." + str(cancel_pages[0]) \
-                                        + " — аннулирована;\n"
+                                        + " — аннулирован;\n"
                         english_text += "\t- sheet " \
                                         + str(document_info['set_position']) + "." + str(cancel_pages[0]) \
                                         + " — cancelled;\n"
                     else:
                         zipped_pages = self._zip_pages(document_info["set_position"], cancel_pages)
-                        russian_text += f"\t- страницы {zipped_pages} — страницы аннулированы;\n"
+                        russian_text += f"\t- листы {zipped_pages} — листы аннулированы;\n"
                         english_text += f"\t- sheets {zipped_pages} — sheets were cancelled;\n"
 
                 if new_pages:
-                    if len(new_pages) == document_info["number_of_sheets"]:
-                        russian_text += f"\t- {document_code} — добавлен новый документ «{document_info['doc_ru_name']}»;\n"
-                        english_text += f"\t- {document_code} — a new document «{document_info['doc_eng_name']}» has been added;\n"
-                    elif len(new_pages) == 1:
-                        russian_text += "\t- страница " \
+                    if len(new_pages) == 1:
+                        russian_text += "\t- лист " \
                                         + str(document_info['set_position']) + "." + str(new_pages[0]) \
                                         + " — добавлен лист в документ " \
                                           f"«{document_info['doc_ru_name']}» (новый лист);\n"
@@ -99,8 +86,8 @@ class ChangeTextCreator:
                                         + " — a sheet has been added to the document " \
                                           f"«{document_info['doc_eng_name']}» (new sheet);\n"
                     else:
-                        zipped_pages = self._zip_pages(document_info["set_position"], patch_pages)
-                        russian_text += f"\t- страницы {zipped_pages} — добавлены страницы в документ " \
+                        zipped_pages = self._zip_pages(document_info["set_position"], new_pages)
+                        russian_text += f"\t- листы {zipped_pages} — добавлены листы в документ " \
                                         f"«{document_info['doc_ru_name']}» (листы новые);\n"
                         english_text += f"\t- sheets {zipped_pages} — sheets were added to the document " \
                                         f"«{document_info['doc_eng_name']}» (sheets are new);\n"
