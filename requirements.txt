@@ -7,3 +7,6 @@ pypdf==4.2.0
 python-docx==1.1.2
 reportlab==4.2.2
 typing_extensions==4.12.2
+docxtpl~=0.17.0
+transliterate~=1.10.2
+tkScrolledFrame~=1.0.4
