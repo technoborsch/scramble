@@ -3,6 +3,7 @@ import docx
 import pprint
 
 from config import DOC_SIZES_MAP, SIZES_COORDINATES
+from copy import copy
 
 
 class ChangesExtractor:
@@ -40,10 +41,11 @@ class ChangesExtractor:
                                 "number_of_sheets": number_of_sheets,
                                 "set_position": set_position,
                                 "changes": [],
-                                "geometry": self._fill_geometry(doc_code),
+                                "geometry": {},
                             }
-                        changes[set_code][doc_code]["changes"] = self._extract_changed_sheets(revision,
-                                                                                              number_of_sheets)
+                        extracted_changes = self._extract_changed_sheets(revision, number_of_sheets)
+                        changes[set_code][doc_code]["changes"] = extracted_changes
+                        changes[set_code][doc_code]["geometry"] = self._fill_geometry(doc_code, extracted_changes)
             for set_code, set_changes in changes.items():
                 changes[set_code] = dict(sorted(set_changes.items(), key=lambda item: int(item[1]["set_position"])))
             changes = dict(sorted(changes.items(), key=lambda item: item[0]))
@@ -59,6 +61,8 @@ class ChangesExtractor:
                 changes_list.append({
                     "change_number": change_number,
                     "change_type": "patch",
+                    "change_description_ru": "",
+                    "change_description_en": "",
                     "pages": [num + 1 for num in range(0, int(number_of_sheets))],
                     "sections_number": []
                 })
@@ -76,24 +80,32 @@ class ChangesExtractor:
                         changes_list.append({
                             "change_number": change_number,
                             "change_type": "replace",
+                            "change_description_ru": "",
+                            "change_description_en": "",
                             "pages": pages
                         })
                     elif "нов" in type_:
                         changes_list.append({
                             "change_number": change_number,
                             "change_type": "new",
+                            "change_description_ru": "",
+                            "change_description_en": "",
                             "pages": pages
                         })
                     elif "анн" in type_:
                         changes_list.append({
                             "change_number": change_number,
                             "change_type": "cancel",
+                            "change_description_ru": "",
+                            "change_description_en": "",
                             "pages": pages
                         })
                     elif "уч" in type_ or "изм" in type_:
                         changes_list.append({
                             "change_number": change_number,
                             "change_type": "patch",
+                            "change_description_ru": "",
+                            "change_description_en": "",
                             "pages": pages,
                             "sections_number": []
                         })
@@ -123,9 +135,23 @@ class ChangesExtractor:
         return pages_list
 
     @staticmethod
-    def _fill_geometry(doc_code):
+    def _fill_geometry(doc_code, changes):
         doc_letters = doc_code.split("-")[1][:-4].upper().strip("\n")
-        return SIZES_COORDINATES[DOC_SIZES_MAP[doc_letters]]
+        changed_sheets = []
+        for change in changes:
+            changed_sheets += change["pages"]
+        changed_sheets.sort()
+        coordinates = copy(SIZES_COORDINATES[DOC_SIZES_MAP[doc_letters]])
+        geometry = []
+        for changed_sheet in changed_sheets:
+            geometry.append((changed_sheet, (
+                coordinates["stamp_x"],
+                coordinates["stamp_y"],
+                coordinates["note_x"],
+                coordinates["note_y"],
+                coordinates["scale"]
+            )))
+        return geometry
 
 
 if __name__ == "__main__":

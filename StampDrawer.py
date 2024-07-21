@@ -17,9 +17,7 @@ styles["Normal"].fontName = "Times"
 class StampDrawer:
 
     def __init__(self):
-        self.packet = io.BytesIO()
-        self.can = canvas.Canvas(self.packet, pagesize=(self._to_su(101.5), self._to_su(22.5)))
-        self.output = PdfWriter()
+        self._reset()
         self.table_style = TableStyle([('BACKGROUND', (0, 0), (-1, -1), colors.white),
                                        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
                                        ('ALIGN', (0, 0), (-1, -1), "CENTER"),
@@ -28,12 +26,12 @@ class StampDrawer:
                                        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                                        ('GRID', (0, 0), (-1, -1), 0.5, colors.black)])
 
-    def draw(self, stamp_type, ii_number, ii_author, ii_date, signature_path, number_of_sections=None):
+    def draw(self, stamp_type, ii_number, ii_author, ii_date, destination_path, number_of_sections=None):
         stamp_types = {
             "replace": ("-", "Зам."),
             "new": ("-", "Нов."),
             "cancel": ("-", "Анн."),
-            "sections": (number_of_sections, "-")
+            "patch": (number_of_sections, "-")
         }
         data = [
             ["Изм.01", *stamp_types[stamp_type], ii_number, ii_date],
@@ -62,9 +60,8 @@ class StampDrawer:
         table1.setStyle(self.table_style)
         table1.wrapOn(self.can, 0, 0)
         table1.drawOn(self.can, self._to_su(50.25), self._to_su(0.25))
-        self._sign(signature_path)
 
-        self.write_result("destination.pdf")
+        self.write_result(destination_path)
 
     def write_result(self, destination):
         self.can.save()
@@ -74,6 +71,7 @@ class StampDrawer:
         output_stream = open(destination, "wb")
         self.output.write(output_stream)
         output_stream.close()
+        self._reset()
 
     def _draw_text(self, text, size, x, y):
         self.can.setFont("Times", self._to_su(size))
@@ -85,6 +83,11 @@ class StampDrawer:
     def _sign(self, image):
         self.can.drawImage(image, self._to_su(56), self._to_su(17), self._to_su(7), self._to_su(7),
                            [0, 50, 0, 50, 0, 50])
+
+    def _reset(self):
+        self.packet = io.BytesIO()
+        self.can = canvas.Canvas(self.packet, pagesize=(self._to_su(101.5), self._to_su(22.5)))
+        self.output = PdfWriter()
 
     @staticmethod
     def _to_su(number):

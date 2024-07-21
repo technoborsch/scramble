@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import Frame
-from tkinter.ttk import Combobox
 from tkscrolledframe import ScrolledFrame
 
 
@@ -17,13 +16,14 @@ class SettingsWindow:
         self.in_f = self.sf.display_widget(Frame)
 
         this_row = 0
-        ch = self.master.changes
         self.add_labels_line(this_row, [
             "Код комплекта",
             "Код документа",
             "Номер страницы",
             "Тип изменения",
             "Число изменяемых участков",
+            "Описание на русском",
+            "Описание на английском",
             "Координата X пробивки",
             "Координата Y пробивки",
             "Координата X штампа",
@@ -32,7 +32,7 @@ class SettingsWindow:
         ])
         this_row += 1
 
-        for set_code, set_documents in ch.items():
+        for set_code, set_documents in self.master.changes.items():
             set_code_label = set_code + "_label"
             setattr(self, set_code_label, tk.Label(self.in_f, text=set_code))
             getattr(self, set_code_label).grid(row=this_row, column=0)
@@ -42,9 +42,31 @@ class SettingsWindow:
                 setattr(self, doc_code_label, tk.Label(self.in_f, text=doc_code))
                 getattr(self, doc_code_label).grid(row=this_row, column=1)
                 this_row += 1
-                for change in doc_info["changes"]:
+                for i, change in enumerate(doc_info["changes"]):
+                    change_description_ru = change["change_description_ru"]
+                    change_description_ru_id = set_code + "%" + doc_code + "%" + str(i) + "%" + "change_description_ru"
+                    setattr(self, change_description_ru_id + "%" + "var", tk.StringVar(self.in_f))
+                    getattr(self, change_description_ru_id + "%" + "var").set(change_description_ru)
+                    setattr(self, change_description_ru_id + "%" + "entry",
+                            tk.Entry(self.in_f,
+                                     width=15,
+                                     justify="left",
+                                     textvariable=getattr(self, change_description_ru_id + "%" + "var")))
+                    getattr(self, change_description_ru_id + "%" + "entry").grid(sticky="W", row=this_row, column=5, padx=7)
+
+                    change_description_en = change["change_description_en"]
+                    change_description_en_id = set_code + "%" + doc_code + "%" + str(i) + "%" + "change_description_en"
+                    setattr(self, change_description_en_id + "%" + "var", tk.StringVar(self.in_f))
+                    getattr(self, change_description_en_id + "%" + "var").set(change_description_en)
+                    setattr(self, change_description_en_id + "%" + "entry",
+                            tk.Entry(self.in_f,
+                                     width=15,
+                                     justify="left",
+                                     textvariable=getattr(self, change_description_en_id + "%" + "var")))
+                    getattr(self, change_description_en_id + "%" + "entry").grid(sticky="W", row=this_row, column=6, padx=7)
+
                     for sheet in change["pages"]:
-                        self.add_change_line(set_code, doc_code, int(sheet), this_row, 2, change)
+                        self.add_change_line(set_code, doc_code, int(sheet), this_row, 2, change, doc_info["geometry"])
                         this_row += 1
 
         self.ok_button = tk.Button(self.in_f, text="OK", command=self.save_settings)
@@ -58,7 +80,7 @@ class SettingsWindow:
             getattr(self, attr_name).grid(row=row, column=counter)
             counter += 1
 
-    def add_change_line(self, set_code, document_code, sheet_number, row, column, change):
+    def add_change_line(self, set_code, document_code, sheet_number, row, column, change, geometry):
         this_column = column
         sheet_id = set_code + "%" + document_code + "%" + str(sheet_number)
         setattr(self, sheet_id + "%" + "label", tk.Label(self.in_f, text=str(sheet_number)))
@@ -73,138 +95,165 @@ class SettingsWindow:
         }
         tr_ch_type = translations[ch_type]
         change_type_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "change_type"
-        setattr(self, change_type_id + "%" + "var", tk.StringVar(self.in_f))
-        getattr(self, change_type_id + "%" + "var").set(tr_ch_type)
-        setattr(self, change_type_id + "%" + "entry",
-                Combobox(self.in_f,
-                         width=15,
-                         justify="left",
-                         textvariable=getattr(self, change_type_id + "%" + "var")))
-        getattr(self, change_type_id + "%" + "entry")["values"] = tuple(translations.values())
-        getattr(self, change_type_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
+        setattr(self, change_type_id + "%" + "label", tk.Label(self.in_f, text=tr_ch_type))
+        getattr(self, change_type_id + "%" + "label").grid(row=row, column=this_column)
         this_column += 1
 
         if ch_type == "patch":
             num_of_sections = str(list(filter(lambda x: x[0] == sheet_number, change["sections_number"]))[0][1])
+            num_of_sections_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "num_of_sections"
+            setattr(self, num_of_sections_id + "%" + "var", tk.StringVar(self.in_f))
+            getattr(self, num_of_sections_id + "%" + "var").set(num_of_sections)
+            setattr(self, num_of_sections_id + "%" + "entry",
+                    tk.Entry(self.in_f,
+                             width=15,
+                             justify="left",
+                             textvariable=getattr(self, num_of_sections_id + "%" + "var")))
+            getattr(self, num_of_sections_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
         else:
             num_of_sections = "-"
-        num_of_sections_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "num_of_sections"
-        setattr(self, num_of_sections_id + "%" + "var", tk.StringVar(self.in_f))
-        getattr(self, num_of_sections_id + "%" + "var").set(num_of_sections)
-        setattr(self, num_of_sections_id + "%" + "entry",
+            num_of_sections_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "no_sections"
+            setattr(self, num_of_sections_id + "%" + "label", tk.Label(self.in_f, text=num_of_sections))
+            getattr(self, num_of_sections_id + "%" + "label").grid(row=row, column=this_column)
+        this_column += 3
+
+        note_x = str(list(filter(lambda x: x[0] == sheet_number, geometry))[0][1][2])
+        note_x_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "note_x"
+        setattr(self, note_x_id + "%" + "var", tk.DoubleVar(self.in_f))
+        getattr(self, note_x_id + "%" + "var").set(note_x)
+        setattr(self, note_x_id + "%" + "entry",
                 tk.Entry(self.in_f,
                          width=15,
                          justify="left",
-                         textvariable=getattr(self, num_of_sections_id + "%" + "var")))
-        getattr(self, num_of_sections_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
-        """
-        setattr(self, attribute + "_name_var", tk.StringVar(self.window))
-        getattr(self, attribute + "_name_var").set(attribute_parameters[0])
-        setattr(self, attribute + "_name_entry",
-                tk.Entry(self.window,
+                         textvariable=getattr(self, note_x_id + "%" + "var")))
+        getattr(self, note_x_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
+        this_column += 1
+
+        note_y = str(list(filter(lambda x: x[0] == sheet_number, geometry))[0][1][3])
+        note_y_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "note_y"
+        setattr(self, note_y_id + "%" + "var", tk.DoubleVar(self.in_f))
+        getattr(self, note_y_id + "%" + "var").set(note_y)
+        setattr(self, note_y_id + "%" + "entry",
+                tk.Entry(self.in_f,
                          width=15,
                          justify="left",
-                         textvariable=getattr(self, attribute + "_name_var")))
-        getattr(self, attribute + "_name_entry").grid(sticky="W", row=row, column=1, padx=7)
+                         textvariable=getattr(self, note_y_id + "%" + "var")))
+        getattr(self, note_y_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
+        this_column += 1
 
-        setattr(self, attribute + "_regex_var", tk.StringVar(self.window))
-        getattr(self, attribute + "_regex_var").set(", ".join(attribute_parameters[2]))
-        setattr(self, attribute + "_regex_entry",
-                tk.Entry(self.window,
-                         width=40,
+        stamp_x = str(list(filter(lambda x: x[0] == sheet_number, geometry))[0][1][0])
+        stamp_x_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "stamp_x"
+        setattr(self, stamp_x_id + "%" + "var", tk.StringVar(self.in_f))
+        getattr(self, stamp_x_id + "%" + "var").set(stamp_x)
+        setattr(self, stamp_x_id + "%" + "entry",
+                tk.Entry(self.in_f,
+                         width=15,
                          justify="left",
-                         textvariable=getattr(self, attribute + "_regex_var")))
-        getattr(self, attribute + "_regex_entry").grid(sticky="W", row=row, column=2, padx=7)
+                         textvariable=getattr(self, stamp_x_id + "%" + "var")))
+        getattr(self, stamp_x_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
+        this_column += 1
 
-        setattr(self, attribute + "_strip_var", tk.StringVar(self.window))
-        getattr(self, attribute + "_strip_var").set(attribute_parameters[3])
-        setattr(self, attribute + "_strip_entry",
-                tk.Entry(self.window,
-                         width=5,
+        stamp_y = str(list(filter(lambda x: x[0] == sheet_number, geometry))[0][1][1])
+        stamp_y_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "stamp_y"
+        setattr(self, stamp_y_id + "%" + "var", tk.StringVar(self.in_f))
+        getattr(self, stamp_y_id + "%" + "var").set(stamp_y)
+        setattr(self, stamp_y_id + "%" + "entry",
+                tk.Entry(self.in_f,
+                         width=15,
                          justify="left",
-                         textvariable=getattr(self, attribute + "_strip_var")))
-        getattr(self, attribute + "_strip_entry").grid(sticky="W", row=row, column=3, padx=7)
+                         textvariable=getattr(self, stamp_y_id + "%" + "var")))
+        getattr(self, stamp_y_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
+        this_column += 1
 
-        setattr(self, attribute + "_convert_var", tk.StringVar(self.window))
-        getattr(self, attribute + "_convert_var").set(
-            json.dumps(attribute_parameters[4], ensure_ascii=False) if attribute_parameters[4] else '')
-        setattr(self, attribute + "_convert_entry",
-                tk.Entry(self.window,
-                         width=10,
+        scale = str(list(filter(lambda x: x[0] == sheet_number, geometry))[0][1][4])
+        scale_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "scale"
+        setattr(self, scale_id + "%" + "var", tk.StringVar(self.in_f))
+        getattr(self, scale_id + "%" + "var").set(scale)
+        setattr(self, scale_id + "%" + "entry",
+                tk.Entry(self.in_f,
+                         width=15,
                          justify="left",
-                         textvariable=getattr(self, attribute + "_convert_var")))
-        getattr(self, attribute + "_convert_entry").grid(sticky="W", row=row, column=4, padx=7)
-
-        setattr(self, attribute + "_default_var", tk.StringVar(self.window))
-        getattr(self, attribute + "_default_var").set(attribute_parameters[5] if attribute_parameters[5] else '')
-        setattr(self, attribute + "_default_entry",
-                tk.Entry(self.window,
-                         width=10,
-                         justify="left",
-                         textvariable=getattr(self, attribute + "_default_var")))
-        getattr(self, attribute + "_default_entry").grid(sticky="W", row=row, column=5, padx=7)
-
-        setattr(self, attribute + "_capitalize_var", tk.StringVar(self.window))
-        getattr(self, attribute + "_capitalize_var").set(attribute_parameters[6])
-        setattr(self, attribute + "_capitalize_check",
-                tk.Checkbutton(self.window,
-                               width=10,
-                               justify="left",
-                               variable=getattr(self, attribute + "_capitalize_var")))
-        getattr(self, attribute + "_capitalize_check").grid(sticky="W", row=row, column=6, padx=7)
-        """
+                         textvariable=getattr(self, scale_id + "%" + "var")))
+        getattr(self, scale_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
+        this_column += 1
 
     def save_settings(self):
-        """
         for attribute in dir(self):
-            if attribute.endswith("_verbose_name_var"):
-                setting_name = attribute[:-len("_verbose_name_var")]
+            if attribute.endswith("num_of_sections%var"):
+                setting_name = attribute[:-len("%num_of_sections%var")]
                 value = getattr(self, attribute).get()
-                self.settings.parameters[setting_name][1] = value
-            elif attribute.endswith("_name_var"):
-                setting_name = attribute[:-len("_name_var")]
-                value = getattr(self, attribute).get()
-                self.settings.parameters[setting_name][0] = value
-            elif attribute.endswith("_regex_var"):
-                setting_name = attribute[:-len("_regex_var")]
-                value = getattr(self, attribute).get()
-                if value:
-                    self.settings.parameters[setting_name][2] = value.split(", ")
-                else:
-                    self.settings.parameters[setting_name][2] = []
-            elif attribute.endswith("_strip_var"):
-                setting_name = attribute[:-len("_strip_var")]
-                value = getattr(self, attribute).get()
-                self.settings.parameters[setting_name][3] = value
-            elif attribute.endswith("_convert_var"):
-                setting_name = attribute[:-len("_convert_var")]
-                value = getattr(self, attribute).get()
-                if value:
-                    self.settings.parameters[setting_name][4] = json.loads(value)
-                else:
-                    self.settings.parameters[setting_name][4] = {}
-            elif attribute.endswith("_default_var"):
-                setting_name = attribute[:-len("_default_var")]
-                value = getattr(self, attribute).get()
-                self.settings.parameters[setting_name][5] = value
-            elif attribute.endswith("_capitalize_var"):
-                setting_name = attribute[:-len("_capitalize_var")]
-                value = getattr(self, attribute).get()
-                self.settings.parameters[setting_name][3] = bool(value)
-            elif attribute == "empty_lines_var":
-                value = getattr(self, "empty_lines_var").get()
-                self.settings.empty_lines = int(value)
-            elif attribute == "ignore_mass_less_than_var":
-                value = getattr(self, "ignore_mass_less_than_var").get()
-                self.settings.ignore_with_mass_less_than = int(value)
-            elif attribute == "ignore_list_var":
-                value = getattr(self, "ignore_list_var").get().split(", ")
-                self.settings.ignore_with_mass_less_than = value
+                set_code, doc_code, sheet_number = setting_name.split("%")
+                doc_changes = self.master.changes[set_code][doc_code]["changes"]
+                for change in doc_changes:
+                    if int(sheet_number) in change["pages"]:
+                        for i, pair in enumerate(change["sections_number"]):
+                            if pair[0] == int(sheet_number):
+                                change["sections_number"][i] = (int(sheet_number), value)
 
-        self.caller.apply_settings(self.settings)
-        self.caller.extractor = Extractor(IOHandler(), self.settings)
-        self.settings.save()
-        """
+            if attribute.endswith("change_description_ru%var"):
+                setting_name = attribute[:-len("%change_description_ru%var")]
+                value = getattr(self, attribute).get()
+                set_code, doc_code, i = setting_name.split("%")
+                doc_changes = self.master.changes[set_code][doc_code]["changes"]
+                doc_changes[int(i)]["change_description_ru"] = value
+
+            if attribute.endswith("change_description_en%var"):
+                setting_name = attribute[:-len("%change_description_en%var")]
+                value = getattr(self, attribute).get()
+                set_code, doc_code, i = setting_name.split("%")
+                doc_changes = self.master.changes[set_code][doc_code]["changes"]
+                doc_changes[int(i)]["change_description_en"] = value
+
+            if attribute.endswith("note_x%var"):
+                setting_name = attribute[:-len("%note_x%var")]
+                value = int(getattr(self, attribute).get())
+                set_code, doc_code, sheet_number = setting_name.split("%")
+                doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
+                for i, page in enumerate(doc_geometry):
+                    if int(sheet_number) == page[0]:
+                        g = page[1]
+                        doc_geometry[i] = (int(sheet_number), (g[0], g[1], value, g[3], g[4]))
+
+            if attribute.endswith("note_y%var"):
+                setting_name = attribute[:-len("%note_y%var")]
+                value = int(getattr(self, attribute).get())
+                set_code, doc_code, sheet_number = setting_name.split("%")
+                doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
+                for i, page in enumerate(doc_geometry):
+                    if int(sheet_number) == page[0]:
+                        g = page[1]
+                        doc_geometry[i] = (int(sheet_number), (g[0], g[1], g[2], value, g[4]))
+
+            if attribute.endswith("stamp_x%var"):
+                setting_name = attribute[:-len("%stamp_x%var")]
+                value = int(getattr(self, attribute).get())
+                set_code, doc_code, sheet_number = setting_name.split("%")
+                doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
+                for i, page in enumerate(doc_geometry):
+                    if int(sheet_number) == page[0]:
+                        g = page[1]
+                        doc_geometry[i] = (int(sheet_number), (value, g[1], g[2], g[3], g[4]))
+
+            if attribute.endswith("stamp_y%var"):
+                setting_name = attribute[:-len("%stamp_y%var")]
+                value = int(getattr(self, attribute).get())
+                set_code, doc_code, sheet_number = setting_name.split("%")
+                doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
+                for i, page in enumerate(doc_geometry):
+                    if int(sheet_number) == page[0]:
+                        g = page[1]
+                        doc_geometry[i] = (int(sheet_number), (g[0], value, g[2], g[3], g[4]))
+
+            if attribute.endswith("scale%var"):
+                setting_name = attribute[:-len("%scale%var")]
+                value = float(getattr(self, attribute).get())
+                set_code, doc_code, sheet_number = setting_name.split("%")
+                doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
+                for i, page in enumerate(doc_geometry):
+                    if int(sheet_number) == page[0]:
+                        g = page[1]
+                        doc_geometry[i] = (int(sheet_number), (g[0], g[1], g[2], g[3], value))
+        self.master.save_set_changes()
         self.on_exit()
 
     def on_exit(self):

@@ -1,16 +1,19 @@
 import os
 import tkinter as tk
-from tkinter import scrolledtext, filedialog, messagebox, simpledialog, END, INSERT
+from tkinter import scrolledtext, filedialog, messagebox, simpledialog, INSERT
 from datetime import datetime
 import pickle
 import tempfile
 
 from transliterate import translit
+from docx2pdf import convert
+from pypdf import PdfReader
 
 import config
 from ChangesExtractor import ChangesExtractor
 from ChangeTextCreator import ChangeTextCreator
 from SettingsWindow import SettingsWindow
+from Stamper import Stamper
 
 
 class Interface:
@@ -36,6 +39,7 @@ class Interface:
 
         self.extractor = ChangesExtractor()
         self.creator = ChangeTextCreator()
+        self.stamper = Stamper()
         self.changes = {}
 
         self.about_label = tk.Label(self.window, text="Сведения о составителе:")
@@ -80,7 +84,8 @@ class Interface:
         self.signature_path_label = tk.Label(self.window, text="Путь до файла с подписью .png")
         self.signature_path_label.grid(sticky="W", row=5, column=0, columnspan=3, padx=7)
 
-        self.signature_path_entry = tk.Entry(self.window, width=50, justify='right', textvariable=self.signature_path_var)
+        self.signature_path_entry = tk.Entry(self.window, width=50, justify='right',
+                                             textvariable=self.signature_path_var)
         self.signature_path_entry.grid(sticky="W", row=6, column=0, columnspan=2, padx=7)
 
         self.signature_path_button = tk.Button(self.window, text="Указать", command=self.get_signature)
@@ -89,7 +94,8 @@ class Interface:
         self.directory_path_label = tk.Label(self.window, text="Путь до папки с файлами ИИ:")
         self.directory_path_label.grid(sticky="W", row=7, column=0, columnspan=3, padx=7)
 
-        self.directory_path_entry = tk.Entry(self.window, width=50, justify='right', textvariable=self.directory_path_var)
+        self.directory_path_entry = tk.Entry(self.window, width=50, justify='right',
+                                             textvariable=self.directory_path_var)
         self.directory_path_entry.grid(sticky="W", row=8, column=0, columnspan=2, padx=7)
 
         self.open_button = tk.Button(self.window, text="Указать", command=self.get_directory_path)
@@ -104,15 +110,22 @@ class Interface:
         self.change_notice_date_label = tk.Label(self.window, text="Дата ИИ:")
         self.change_notice_date_label.grid(sticky="W", row=10, column=1, padx=7)
 
-        self.change_notice_number_entry = tk.Entry(self.window, width=20, justify='right', textvariable=self.change_notice_number_var)
+        self.change_notice_number_entry = tk.Entry(self.window, width=20, justify='right',
+                                                   textvariable=self.change_notice_number_var)
         self.change_notice_number_entry.grid(sticky="W", row=11, column=0, padx=7)
 
-        self.change_notice_date_entry = tk.Entry(self.window, width=20, justify='right', textvariable=self.change_notice_date_var)
+        self.change_notice_date_entry = tk.Entry(self.window, width=20, justify='right',
+                                                 textvariable=self.change_notice_date_var)
         self.change_notice_date_entry.grid(sticky="W", row=11, column=1, padx=7)
 
-        self.generate_title_button = tk.Button(self.window, text="Собрать титул", command=self._create_title,
+        self.generate_title_button = tk.Button(self.window, text="Собрать титул", command=self._create_title_template,
                                                state='disabled')
         self.generate_title_button.grid(row=12, column=0, pady=10)
+
+        self.generate_change_notice_button = tk.Button(self.window, text="Собрать ИИ",
+                                                       command=self._create_change_notice,
+                                                       )
+        self.generate_change_notice_button.grid(row=12, column=2, pady=10)
 
         self.result_field = tk.scrolledtext.ScrolledText(self.window, width=45, height=8)
         self.result_field.grid(row=13, columnspan=3, padx=7)
@@ -221,7 +234,7 @@ class Interface:
         else:
             return True
 
-    def _save_set_changes(self):
+    def save_set_changes(self):
         if self.directory_path_var.get() and self.changes:
             set_settings_path = os.path.join(self.directory_path_var.get(), "config")
             with open(set_settings_path, "wb") as f:
@@ -253,18 +266,34 @@ class Interface:
         settings_window = SettingsWindow(self)
         self.window.wait_window(settings_window.window)
 
-    def _create_title(self):
-        change_notice_info = {
-            "change_notice_number": self.change_notice_number_var.get(),
-            "change_notice_date": self.change_notice_date_var.get(),
-            "change_notice_sets": "\n".join(self.changes.keys()),
-            "change_due_date": self._add_months(datetime.strptime(self.change_notice_date_var.get(), "%d.%m.%Y"), 1).strftime("%d.%m.%Y"),
-            "set_name": self.set_name_var.get(),
-            "attachment_sheet_quantity": self._count_attachments(),
-            "sheets_total": "{{ sheets_total }}",
-            "author": self._get_author_string()
-        }
-        self.creator.create(change_notice_info, self.changes)
+    def _create_change_notice(self):
+        self.stamper.stamp_directory(
+            self.directory_path_var.get(),
+            self.changes,
+            self.change_notice_number_var.get(),
+            self.change_notice_date_var.get(),
+            self.last_name_ru_var.get() + "\n" + self.last_name_en_var.get(),
+            messagebox.showerror
+        )
+
+    def _create_title_template(self):
+        template_path = os.path.join(self.directory_path_var.get(), "template.docx")
+        pdf_path = os.path.join(self.directory_path_var.get(), "dummy.pdf")
+        change_notice_info = {"change_notice_number": self.change_notice_number_var.get(),
+                              "change_notice_sets": "\n".join(self.changes.keys()), "set_name": self.set_name_var.get(),
+                              "attachment_sheet_quantity": self._count_attachments(),
+                              "change_notice_date": "{{ change_notice_date }}",
+                              "change_due_date": "{{ change_due_date }}", "sheets_total": "{{ sheets_total }}",
+                              "author": "{{ author }}"}
+
+        self.creator.create(change_notice_info, self.changes, template_path)
+        convert(template_path, pdf_path)
+        with open(pdf_path, "rb") as f:
+            doc = PdfReader(f)
+            sheets_total = len(doc.pages)
+        os.remove(pdf_path)
+        change_notice_info["sheets_total"] = str(sheets_total)
+        self.creator.create(change_notice_info, self.changes, template_path)
 
     @staticmethod
     def _add_months(current_date, months_to_add):
@@ -283,12 +312,12 @@ class Interface:
 
     def _get_author_string(self):
         return self.last_name_ru_var.get() + " " + self.name_ru_var.get()[0] + "." + self.surname_ru_var.get()[0] \
-                 + ". /\n" + self.last_name_en_var.get() + " " + self.name_en_var.get()[0] + "." \
-                 + self.surname_en_var.get()[0] + "."
+               + ". /\n" + self.last_name_en_var.get() + " " + self.name_en_var.get()[0] + "." \
+               + self.surname_en_var.get()[0] + "."
 
     def on_exit(self):
         self._save_settings()
-        self._save_set_changes()
+        self.save_set_changes()
         self.window.destroy()
 
     def run(self):
