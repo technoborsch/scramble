@@ -273,6 +273,7 @@ class Interface:
             self.change_notice_number_var.get(),
             self.change_notice_date_var.get(),
             self.last_name_ru_var.get() + "\n" + self.last_name_en_var.get(),
+            self.signature_path_var.get(),
             messagebox.showerror
         )
 

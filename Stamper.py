@@ -1,77 +1,108 @@
+import io
 import os
+import re
 
 from pypdf import PdfReader, PdfWriter
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
+
 from StampDrawer import StampDrawer
 
 
-# directory = r"C:\Users\n.nikiforov\PycharmProjects\IIhelper\3_ИИ"
-# pdf_list = []
-
-# for file in os.listdir(directory):
-#     filename = os.fsdecode(file)
-#     if filename.endswith(".pdf"):
-#         pdf_list.append(file)
-#     print(file)
-# print(pdf_list)
-
-# move to the beginning of the StringIO buffer
-# packet.seek(0)
-
-# create a new PDF with Reportlab
-# new_pdf = PdfReader(packet)
-# stamp = PdfReader(open("stampA4.pdf", "rb"))
-# read your existing PDF
-# output = PdfWriter()
-# add the "watermark" (which is the new pdf) on the existing page
-# for pdf_name in pdf_list:
-#     pdf_path = os.path.join(directory, pdf_name)
-#     existing_pdf = PdfReader(open(pdf_path, "rb"))
-#     for page in existing_pdf.pages:
-#         if not pdf_name.startswith("!"):
-#             page.merge_translated_page(stamp.pages[0], 0, 30)
-#         # page.merge_page(new_pdf.pages[0])
-#         output.add_page(page)
-# # finally, write "output" to a real file
-# output_stream = open("destination.pdf", "wb")
-# output.write(output_stream)
-# output_stream.close()
-output = PdfWriter()
+pdfmetrics.registerFont(TTFont("Times", r"materials\fonts\timesnrcyrmt.ttf"))
+output = PdfWriter()  # TODO WTF
 
 
 class Stamper:
     def __init__(self):
         self.stamp_drawer = StampDrawer()
         self.stamp_paths = []
-        self.pdf_paths = []
+        self.pdf_paths = {}
 
-    def stamp_directory(self, directory_path, changes, cn_number, cn_date, author, error_callback):
-        all_is_ok, absent_files = self._check_consistency(directory_path, changes)
+    def stamp_directory(self, directory_path, changes, cn_number, cn_date, author, author_signature, error_callback):
+        all_is_ok, absent_files, more_sheets, less_sheets = self._check_consistency(directory_path, changes)
         if all_is_ok:
             self._create_stamps(changes, cn_date, cn_number, author, directory_path)
-            self._do_stamping(directory_path, changes)
+            self._do_stamping(directory_path, changes, author_signature)
+            self._delete_stamps()
         else:
-            absent_files_string = ", ".join(absent_files)
-            error_callback("Нет PDF", f"Отсутствуют PDF для файлов: {absent_files_string}")
+            text = ""
+            if absent_files:
+                absent_files_string = ", ".join(absent_files)
+                text += f"Отсутствуют PDF для документов: {absent_files_string}\n"
+            if more_sheets:
+                more_sheets_string = ", ".join(more_sheets)
+                text += f"Для следующих документов листов в PDF больше, чем нужно: {more_sheets_string}\n"
+            if less_sheets:
+                less_sheets_string = ", ".join(less_sheets)
+                text += f"Для следующих документов листов в PDF меньше, чем нужно: {less_sheets_string}\n"
+
+            error_callback("Проблемы с файлами PDF", f"{text}")
 
     def _check_consistency(self, directory_path, changes):  # TODO check pages
-        doc_list = []
         not_in_directory = []
+        more_sheets = []
+        less_sheets = []
         ok = True
-        for set_ in changes.values():
-            doc_list += list(set_.keys())
-        for doc_code in doc_list:
-            filename = doc_code + ".pdf"
-            another_filename = doc_code + "-Модель.pdf"
-            file_path = os.path.join(directory_path, filename)
-            another_filepath = os.path.join(directory_path, another_filename)
-            if os.path.exists(file_path):
-                self.pdf_paths.append(file_path)
-            elif os.path.exists(another_filepath):
-                self.pdf_paths.append(another_filepath)
-            else:
-                not_in_directory.append(doc_code)
-                ok = False
-        return ok, not_in_directory
+        for set_code, set_docs in changes.items():
+            for doc_code in set_docs:
+                contains_doc = False
+                actual_filepath = ""
+                for dir_filename in os.listdir(directory_path):
+                    if dir_filename.endswith(".pdf") and doc_code in dir_filename:
+                        contains_doc = True
+                        actual_filepath = os.path.join(directory_path, dir_filename)
+                        break
+                if not contains_doc:
+                    not_in_directory.append(doc_code)
+                    ok = False
+                else:
+                    page_number_str = re.findall(r"\d+", actual_filepath.replace(doc_code, ""))[0]
+                    page_number = None
+                    if page_number_str:
+                        page_number = int(page_number_str)
+                    if doc_code not in self.pdf_paths.keys():
+                        self.pdf_paths[doc_code] = [(actual_filepath, page_number)]
+                    else:
+                        self.pdf_paths[doc_code].append((actual_filepath, page_number))
+
+            for this_doc_code, actual_filepath_list in self.pdf_paths.items():
+                pages = []
+                new_pages = []
+                cancel_pages = []
+                this_set = list(filter(lambda x: this_doc_code in x[1].keys(), changes.items()))[0][0]
+                total_pages = int(changes[this_set][this_doc_code]["number_of_sheets"])
+                for change in changes[this_set][this_doc_code]["changes"]:
+                    if change["change_type"] == "new":
+                        new_pages += change["pages"]
+                    elif change["change_type"] == "cancel":
+                        cancel_pages += change["pages"]
+                    else:
+                        pages += change["pages"]
+                if len(actual_filepath_list) == 1:
+                    doc = PdfReader(actual_filepath_list[0][0])
+                    if len(doc.pages) > total_pages + len(new_pages) + len(cancel_pages):
+                        if this_doc_code not in more_sheets:
+                            more_sheets.append(this_doc_code)
+                        ok = False
+                    elif len(doc.pages) < total_pages + len(new_pages) + len(cancel_pages) \
+                            and not len(doc.pages) == len(pages) + len(new_pages) + len(cancel_pages):
+                        if this_doc_code not in less_sheets:
+                            less_sheets.append(this_doc_code)
+                        ok = False
+                else:
+                    if len(actual_filepath_list) > total_pages + len(new_pages) + len(cancel_pages):
+                        if this_doc_code not in more_sheets:
+                            more_sheets.append(this_doc_code)
+                        ok = False
+                    elif len(actual_filepath_list) < total_pages + len(new_pages) + len(cancel_pages)\
+                            and not len(actual_filepath_list) == len(pages) + len(new_pages) + len(cancel_pages):
+                        if this_doc_code not in less_sheets:
+                            less_sheets.append(this_doc_code)
+                        ok = False
+
+        return ok, not_in_directory, more_sheets, less_sheets
 
     def _create_stamps(self, changes, cn_date, cn_number, author, directory_path):
         new_stamp = False
@@ -111,62 +142,99 @@ class Stamper:
                                        patch_stamp_path, number_of_sections=changes_number)
                 self.stamp_paths.append(patch_stamp_path)
 
-    def _do_stamping(self, directory_path, changes):
-        for pdf_path in self.pdf_paths:
-            doc_code = pdf_path.split("\\")[-1].strip(".pdf").strip("-Модель")
+    def _do_stamping(self, directory_path, changes, author_signature):
+        for doc_code, pdf_path_list in self.pdf_paths.items():
             set_code = list(filter(lambda x: doc_code in x[1], changes.items()))[0][0]
             doc_changes = changes[set_code][doc_code]["changes"]
             doc_info = changes[set_code][doc_code]
             geometry = doc_info["geometry"]
-            doc = PdfReader(pdf_path)
-            for doc_change in doc_changes:
-                change_type = doc_change["change_type"]
-                pages = doc_change["pages"]
-                this_stamp_name = ""
-                this_section = 0
-                if change_type == "patch":
-                    this_stamp_name = "patch_stamp_"
-                elif change_type == "new":
-                    this_stamp_name = "new_stamp"
-                elif change_type == "replace":
-                    this_stamp_name = "replace_stamp"
-                elif change_type == "cancel":
-                    this_stamp_name = "cancel_stamp"
-                for page_number in pages:
+            if len(pdf_path_list) == 1:
+                doc = PdfReader(pdf_path_list[0][0])
+                this_doc_page = 0
+                for doc_change in doc_changes:
+                    change_type = doc_change["change_type"]
+                    pages = doc_change["pages"]
+                    this_stamp_name = ""
+                    this_section = 0
                     if change_type == "patch":
-                        sections_number = doc_change["sections_number"]
-                        this_section = list(filter(lambda x: int(x[0]) == page_number, sections_number))[0][1]
-                    this_geometry = list(filter(lambda x: x[0] == page_number, geometry))[0][1]
-                    stamp_x = this_geometry[0]
-                    stamp_y = this_geometry[1]
-                    # note_x = this_geometry[2]
-                    # note_y = this_geometry[3]
-                    scale = this_geometry[4]
-                    if change_type == "patch":
-                        this_stamp_filename = this_stamp_name + str(this_section) + ".pdf"
-                    else:
-                        this_stamp_filename = this_stamp_name + ".pdf"
-                    this_stamp_path = os.path.join(directory_path, this_stamp_filename)
-                    this_stamp = PdfReader(this_stamp_path)
-                    this_stamp.pages[0].scale(scale, scale)
-                    try:
-                        if len(doc.pages) == int(doc_info["number_of_sheets"]):
-                            stamped_page = doc.pages[page_number - 1]
-                            stamped_page.transfer_rotation_to_content()
-                            stamped_page.merge_translated_page(
-                                this_stamp.pages[0],
-                                stamped_page.cropbox.width - self._to_su(stamp_x),
-                                self._to_su(stamp_y))
-                            output.add_page(doc.pages[page_number - 1])
+                        this_stamp_name = "patch_stamp_"
+                    elif change_type == "new":
+                        this_stamp_name = "new_stamp"
+                    elif change_type == "replace":
+                        this_stamp_name = "replace_stamp"
+                    elif change_type == "cancel":
+                        this_stamp_name = "cancel_stamp"
+                    for page_number in pages:
+                        if change_type == "patch":
+                            sections_number = doc_change["sections_number"]
+                            this_section = list(filter(lambda x: int(x[0]) == page_number, sections_number))[0][1]
+                        this_geometry = list(filter(lambda x: x[0] == page_number, geometry))[0][1]
+                        stamp_x = this_geometry[0]
+                        stamp_y = this_geometry[1]
+                        note_x = this_geometry[2]
+                        note_y = this_geometry[3]
+                        scale = this_geometry[4]
+                        if change_type == "patch":
+                            this_stamp_filename = this_stamp_name + str(this_section) + ".pdf"
                         else:
-                            pass  # TODO
-                    except IndexError:
-                        pass
+                            this_stamp_filename = this_stamp_name + ".pdf"
+                        this_stamp_path = os.path.join(directory_path, this_stamp_filename)
+                        this_stamp = PdfReader(this_stamp_path)
+                        this_stamp.pages[0].scale(scale, scale)
+
+                        if len(doc.pages) >= int(doc_info["number_of_sheets"]):
+                            stamped_page = doc.pages[page_number - 1]
+                        else:
+                            stamped_page = doc.pages[this_doc_page]
+                            this_doc_page += 1
+                        stamped_page.transfer_rotation_to_content()
+                        stamped_page.merge_translated_page(
+                            this_stamp.pages[0],
+                            stamped_page.cropbox.width - self._to_su(stamp_x),
+                            self._to_su(stamp_y))
+                        stamped_page.merge_translated_page(
+                            self._make_note(f"{set_code}/{doc_info['set_position']}.{page_number}", 3.5).pages[0],
+                            stamped_page.cropbox.width - self._to_su(note_x),
+                            self._to_su(note_y),
+                            over=False
+                        )
+                        self._sign(
+                            stamped_page,
+                            author_signature,
+                            stamped_page.cropbox.width - self._to_su(stamp_x),
+                            self._to_su(stamp_y),
+                            scale)
+                        output.add_page(doc.pages[page_number - 1])
+            else:
+                pass  # TODO make process multi-pdf docs
         result_path = os.path.join(directory_path, "result.pdf")
         output_stream = open(result_path, "wb")
         output.write(output_stream)
         output_stream.close()
-        self.pdf_paths = []
+        self.pdf_paths = {}
+
+    def _make_note(self, text, size):
+        packet = io.BytesIO()
+        can = canvas.Canvas(packet, pagesize=(self._to_su(70), self._to_su(10)))
+        can.setFont("Times", self._to_su(size))
+        can.drawString(0, 0, text)
+        can.save()
+        return PdfReader(packet)
+
+    def _sign(self, page, signature, stamp_x, stamp_y, scale):
+        img_temp = io.BytesIO()
+        img_doc = canvas.Canvas(img_temp)
+        img_doc.drawImage(signature,
+                          stamp_x + self._to_su(52),
+                          stamp_y + self._to_su(12),
+                          self._to_su(7),
+                          self._to_su(7),
+                          [0, 50, 0, 50, 0, 50]
+                          )
+        img_doc.save()
+        overlay = PdfReader(img_temp).get_page(0)
+        page.transfer_rotation_to_content()
+        page.merge_page(overlay)
 
     @staticmethod
     def _to_su(number):
