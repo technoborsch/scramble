@@ -24,7 +24,7 @@ class StampDrawer:
                                        ('VALIGN', (0, 0), (-1, -1), "MIDDLE"),
                                        ('FONT', (0, 0), (-1, -1), 'Times', self._to_su(2)),
                                        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                                       ('GRID', (0, 0), (-1, -1), 0.5, colors.black)])
+                                       ('GRID', (0, 0), (-1, -1), self._to_su(0.5), colors.black)])
 
     def draw(self, stamp_type, ii_number, ii_author, ii_date, destination_path, number_of_sections=None):
         stamp_types = {
@@ -91,7 +91,7 @@ class StampDrawer:
 
     @staticmethod
     def _to_su(number):
-        return number * 27 / 25.4
+        return number * 72 / 25.4
 
 
 if __name__ == "__main__":

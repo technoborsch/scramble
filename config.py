@@ -13,23 +13,23 @@ DOC_SIZES_MAP = {
 
 SIZES_COORDINATES = {
     "A4": {
-        "stamp_x": 230,
-        "stamp_y": 30,
+        "stamp_x": 151,
+        "stamp_y": 21,
         "note_x": 300,
         "note_y": 20,
         "scale": 1.0
     },
     "A3_V": {
-        "stamp_x": 330,
-        "stamp_y": 40,
+        "stamp_x": 201,
+        "stamp_y": 21,
         "note_x": 500,
         "note_y": 20,
         "scale": 1.0
     },
     "A2_V": {
-        "stamp_x": 500,
-        "stamp_y": 30,
-        "note_x": 550,
+        "stamp_x": 341,
+        "stamp_y": 6,
+        "note_x": 120,
         "note_y": 120,
         "scale": 1.0
     }

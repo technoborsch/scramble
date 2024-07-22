@@ -43,7 +43,6 @@ class Stamper:
         self.stamp_drawer = StampDrawer()
         self.stamp_paths = []
         self.pdf_paths = []
-        self.writer = PdfWriter
 
     def stamp_directory(self, directory_path, changes, cn_number, cn_date, author, error_callback):
         all_is_ok, absent_files = self._check_consistency(directory_path, changes)
@@ -138,7 +137,6 @@ class Stamper:
                         sections_number = doc_change["sections_number"]
                         this_section = list(filter(lambda x: int(x[0]) == page_number, sections_number))[0][1]
                     this_geometry = list(filter(lambda x: x[0] == page_number, geometry))[0][1]
-                    print(this_geometry)
                     stamp_x = this_geometry[0]
                     stamp_y = this_geometry[1]
                     # note_x = this_geometry[2]
@@ -153,9 +151,11 @@ class Stamper:
                     this_stamp.pages[0].scale(scale, scale)
                     try:
                         if len(doc.pages) == int(doc_info["number_of_sheets"]):
-                            doc.pages[page_number - 1].merge_translated_page(
+                            stamped_page = doc.pages[page_number - 1]
+                            stamped_page.transfer_rotation_to_content()
+                            stamped_page.merge_translated_page(
                                 this_stamp.pages[0],
-                                self._to_su(stamp_x),
+                                stamped_page.cropbox.width - self._to_su(stamp_x),
                                 self._to_su(stamp_y))
                             output.add_page(doc.pages[page_number - 1])
                         else:
@@ -166,10 +166,11 @@ class Stamper:
         output_stream = open(result_path, "wb")
         output.write(output_stream)
         output_stream.close()
+        self.pdf_paths = []
 
     @staticmethod
     def _to_su(number):
-        return number * 27 / 25.4
+        return number * 72 / 25.4
 
     def _delete_stamps(self):
         for path in self.stamp_paths:
