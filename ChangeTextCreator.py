@@ -71,9 +71,9 @@ class ChangeTextCreator:
                 if replace_pages:
                     description_ru = ""
                     description_en = ""
-                    if len(patch_descriptions_ru) > 0:
+                    if len(replace_descriptions_ru) > 0:
                         description_ru = ". " + ". ".join(replace_descriptions_ru)
-                    if len(patch_descriptions_en) > 0:
+                    if len(replace_descriptions_en) > 0:
                         description_en = ". " + ". ".join(replace_descriptions_en)
 
                     if len(replace_pages) == 1:
@@ -95,9 +95,9 @@ class ChangeTextCreator:
                 if cancel_pages:
                     description_ru = ""
                     description_en = ""
-                    if len(patch_descriptions_ru) > 0:
+                    if len(cancel_descriptions_ru) > 0:
                         description_ru = ". " + ". ".join(cancel_descriptions_ru)
-                    if len(patch_descriptions_en) > 0:
+                    if len(cancel_descriptions_en) > 0:
                         description_en = ". " + ". ".join(cancel_descriptions_en)
                     if len(cancel_pages) == 1:
                         russian_text += "\t- лист " \
@@ -114,9 +114,9 @@ class ChangeTextCreator:
                 if new_pages:
                     description_ru = ""
                     description_en = ""
-                    if len(patch_descriptions_ru) > 0:
+                    if len(new_descriptions_ru) > 0:
                         description_ru = ". " + ". ".join(new_descriptions_ru)
-                    if len(patch_descriptions_en) > 0:
+                    if len(new_descriptions_en) > 0:
                         description_en = ". " + ". ".join(new_descriptions_en)
 
                     if len(new_pages) == 1:

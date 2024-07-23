@@ -191,12 +191,13 @@ class Stamper:
                         stamped_page.merge_translated_page(
                             this_stamp.pages[0],
                             stamped_page.cropbox.width - self._to_su(stamp_x),
-                            self._to_su(stamp_y))
+                            self._to_su(stamp_y),
+                            over=False
+                        )
                         stamped_page.merge_translated_page(
                             self._make_note(f"{set_code}/{doc_info['set_position']}.{page_number}", 3.5).pages[0],
                             stamped_page.cropbox.width - self._to_su(note_x),
                             self._to_su(note_y),
-                            over=False
                         )
                         self._sign(
                             stamped_page,
@@ -225,16 +226,16 @@ class Stamper:
         img_temp = io.BytesIO()
         img_doc = canvas.Canvas(img_temp)
         img_doc.drawImage(signature,
-                          stamp_x + self._to_su(52),
-                          stamp_y + self._to_su(12),
-                          self._to_su(7),
-                          self._to_su(7),
+                          stamp_x + self._to_su(56),
+                          stamp_y + self._to_su(16),
+                          self._to_su(8),
+                          self._to_su(8),
                           [0, 50, 0, 50, 0, 50]
                           )
         img_doc.save()
         overlay = PdfReader(img_temp).get_page(0)
         page.transfer_rotation_to_content()
-        page.merge_page(overlay)
+        page.merge_translated_page(overlay, 0, 0)
 
     @staticmethod
     def _to_su(number):

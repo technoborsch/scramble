@@ -6,6 +6,7 @@ DOC_SIZES_MAP = {
     "MDB": "A4",
     "MFS": "A2_V",
     "MPB": "A3_V",
+    "MTB": "A2_V",
     "MLH": "A2_V",
     "MAZ": "A4",
     "MPA": "A3_V"
@@ -14,23 +15,23 @@ DOC_SIZES_MAP = {
 SIZES_COORDINATES = {
     "A4": {
         "stamp_x": 151,
-        "stamp_y": 21,
-        "note_x": 300,
-        "note_y": 20,
+        "stamp_y": 18,
+        "note_x": 70,
+        "note_y": 12,
         "scale": 1.0
     },
     "A3_V": {
-        "stamp_x": 201,
-        "stamp_y": 21,
-        "note_x": 500,
-        "note_y": 20,
+        "stamp_x": 276,
+        "stamp_y": 18,
+        "note_x": 75,
+        "note_y": 12.5,
         "scale": 1.0
     },
     "A2_V": {
         "stamp_x": 341,
         "stamp_y": 6,
-        "note_x": 120,
-        "note_y": 120,
+        "note_x": 100,
+        "note_y": 90,
         "scale": 1.0
     }
 }
