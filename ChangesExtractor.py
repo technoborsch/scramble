@@ -73,7 +73,9 @@ class ChangesExtractor:
                 if item:
                     pages, type_ = item.split("(")
                     if pages:
-                        pages = self._unzip_page_numbers(pages)
+                        print(item)
+                        print(pages)
+                        pages = self._unzip_page_numbers(pages.strip(", "))
                     else:
                         pages = [num + 1 for num in range(0, int(number_of_sheets))]
                     if "зам" in type_:
@@ -126,6 +128,7 @@ class ChangesExtractor:
         for item in pages.split(","):
             split_item = item.split("-")
             if len(split_item) == 1:
+                print(split_item)
                 pages_list.append(int(split_item[0].split(".")[1]))
             elif len(split_item) == 2:
                 first_number = int(split_item[0].split(".")[1])

@@ -8,8 +8,8 @@ class SettingsWindow:
     def __init__(self, master):
         self.master = master
         self.window = tk.Toplevel(master.window)
-        self.window.title("Настройки")
-        self.sf = ScrolledFrame(self.window, width=1200, height=700)
+        self.window.title("Настройки комплекта")
+        self.sf = ScrolledFrame(self.window, width=1350, height=700)
         self.sf.pack(side="top", expand=1, fill="both")
         self.sf.bind_arrow_keys(self.window)
         self.sf.bind_scroll_wheel(self.window)
@@ -19,16 +19,16 @@ class SettingsWindow:
         self.add_labels_line(this_row, [
             "Код комплекта",
             "Код документа",
-            "Номер страницы",
-            "Тип изменения",
-            "Число изменяемых участков",
-            "Описание на русском",
-            "Описание на английском",
-            "Координата X пробивки",
-            "Координата Y пробивки",
-            "Координата X штампа",
-            "Координата Y штампа",
-            "Масштаб штампа",
+            "Номер\nстраницы",
+            "Тип\nизменения",
+            "Число\nизменяемых\nучастков",
+            "Описание\nна\nрусском",
+            "Описание\nна\nанглийском",
+            "Координата\nX\nпробивки",
+            "Координата\nY\nпробивки",
+            "Координата\nX\nштампа",
+            "Координата\nY\nштампа",
+            "Масштаб\nштампа",
         ])
         this_row += 1
 
@@ -49,7 +49,7 @@ class SettingsWindow:
                     getattr(self, change_description_ru_id + "%" + "var").set(change_description_ru)
                     setattr(self, change_description_ru_id + "%" + "entry",
                             tk.Entry(self.in_f,
-                                     width=15,
+                                     width=20,
                                      justify="left",
                                      textvariable=getattr(self, change_description_ru_id + "%" + "var")))
                     getattr(self, change_description_ru_id + "%" + "entry").grid(sticky="W", row=this_row, column=5, padx=7)
@@ -60,7 +60,7 @@ class SettingsWindow:
                     getattr(self, change_description_en_id + "%" + "var").set(change_description_en)
                     setattr(self, change_description_en_id + "%" + "entry",
                             tk.Entry(self.in_f,
-                                     width=15,
+                                     width=20,
                                      justify="left",
                                      textvariable=getattr(self, change_description_en_id + "%" + "var")))
                     getattr(self, change_description_en_id + "%" + "entry").grid(sticky="W", row=this_row, column=6, padx=7)
@@ -70,7 +70,7 @@ class SettingsWindow:
                         this_row += 1
 
         self.ok_button = tk.Button(self.in_f, text="OK", command=self.save_settings)
-        self.ok_button.grid(sticky="E", row=this_row, column=0, columnspan=10, padx=7, pady=7)
+        self.ok_button.grid(sticky="E", row=this_row, column=0, padx=7, pady=7)
 
     def add_labels_line(self, row, labels):
         counter = 0
@@ -106,7 +106,7 @@ class SettingsWindow:
             getattr(self, num_of_sections_id + "%" + "var").set(num_of_sections)
             setattr(self, num_of_sections_id + "%" + "entry",
                     tk.Entry(self.in_f,
-                             width=15,
+                             width=5,
                              justify="left",
                              textvariable=getattr(self, num_of_sections_id + "%" + "var")))
             getattr(self, num_of_sections_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
@@ -123,7 +123,7 @@ class SettingsWindow:
         getattr(self, note_x_id + "%" + "var").set(note_x)
         setattr(self, note_x_id + "%" + "entry",
                 tk.Entry(self.in_f,
-                         width=15,
+                         width=10,
                          justify="left",
                          textvariable=getattr(self, note_x_id + "%" + "var")))
         getattr(self, note_x_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
@@ -135,7 +135,7 @@ class SettingsWindow:
         getattr(self, note_y_id + "%" + "var").set(note_y)
         setattr(self, note_y_id + "%" + "entry",
                 tk.Entry(self.in_f,
-                         width=15,
+                         width=10,
                          justify="left",
                          textvariable=getattr(self, note_y_id + "%" + "var")))
         getattr(self, note_y_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
@@ -147,7 +147,7 @@ class SettingsWindow:
         getattr(self, stamp_x_id + "%" + "var").set(stamp_x)
         setattr(self, stamp_x_id + "%" + "entry",
                 tk.Entry(self.in_f,
-                         width=15,
+                         width=10,
                          justify="left",
                          textvariable=getattr(self, stamp_x_id + "%" + "var")))
         getattr(self, stamp_x_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
@@ -159,7 +159,7 @@ class SettingsWindow:
         getattr(self, stamp_y_id + "%" + "var").set(stamp_y)
         setattr(self, stamp_y_id + "%" + "entry",
                 tk.Entry(self.in_f,
-                         width=15,
+                         width=10,
                          justify="left",
                          textvariable=getattr(self, stamp_y_id + "%" + "var")))
         getattr(self, stamp_y_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
@@ -171,7 +171,7 @@ class SettingsWindow:
         getattr(self, scale_id + "%" + "var").set(scale)
         setattr(self, scale_id + "%" + "entry",
                 tk.Entry(self.in_f,
-                         width=15,
+                         width=10,
                          justify="left",
                          textvariable=getattr(self, scale_id + "%" + "var")))
         getattr(self, scale_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
@@ -206,7 +206,7 @@ class SettingsWindow:
 
             if attribute.endswith("note_x%var"):
                 setting_name = attribute[:-len("%note_x%var")]
-                value = int(getattr(self, attribute).get())
+                value = float(getattr(self, attribute).get())
                 set_code, doc_code, sheet_number = setting_name.split("%")
                 doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
                 for i, page in enumerate(doc_geometry):
@@ -216,7 +216,7 @@ class SettingsWindow:
 
             if attribute.endswith("note_y%var"):
                 setting_name = attribute[:-len("%note_y%var")]
-                value = int(getattr(self, attribute).get())
+                value = float(getattr(self, attribute).get())
                 set_code, doc_code, sheet_number = setting_name.split("%")
                 doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
                 for i, page in enumerate(doc_geometry):
@@ -226,7 +226,7 @@ class SettingsWindow:
 
             if attribute.endswith("stamp_x%var"):
                 setting_name = attribute[:-len("%stamp_x%var")]
-                value = int(getattr(self, attribute).get())
+                value = float(getattr(self, attribute).get())
                 set_code, doc_code, sheet_number = setting_name.split("%")
                 doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
                 for i, page in enumerate(doc_geometry):
@@ -236,7 +236,7 @@ class SettingsWindow:
 
             if attribute.endswith("stamp_y%var"):
                 setting_name = attribute[:-len("%stamp_y%var")]
-                value = int(getattr(self, attribute).get())
+                value = float(getattr(self, attribute).get())
                 set_code, doc_code, sheet_number = setting_name.split("%")
                 doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
                 for i, page in enumerate(doc_geometry):

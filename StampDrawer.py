@@ -1,4 +1,6 @@
 import io
+import sys
+import os
 
 from pypdf import PdfWriter, PdfReader
 from reportlab.pdfgen import canvas
@@ -8,7 +10,12 @@ from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
-pdfmetrics.registerFont(TTFont("Times", r"materials\fonts\timesnrcyrmt.ttf"))
+if hasattr(sys, "_MEIPASS"):
+    font_path = os.path.join(sys._MEIPASS, r"timesnrcyrmt.ttf")
+else:
+    font_path = r"materials\fonts\timesnrcyrmt.ttf"
+
+pdfmetrics.registerFont(TTFont("Times", font_path))
 
 styles = getSampleStyleSheet()
 styles["Normal"].fontName = "Times"

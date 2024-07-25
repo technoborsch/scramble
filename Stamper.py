@@ -1,5 +1,6 @@
 import io
 import os
+import sys
 import re
 
 from pypdf import PdfReader, PdfWriter
@@ -9,8 +10,13 @@ from reportlab.pdfgen import canvas
 
 from StampDrawer import StampDrawer
 
-
-pdfmetrics.registerFont(TTFont("Times", r"materials\fonts\timesnrcyrmt.ttf"))
+if hasattr(sys, "_MEIPASS"):
+    font_path = os.path.join(sys._MEIPASS, r"timesnrcyrmt.ttf")
+    nesterov_sign = os.path.join(sys._MEIPASS, r"nesterov_sign.png")
+else:
+    font_path = r"materials\fonts\timesnrcyrmt.ttf"
+    nesterov_sign = r"materials\nesterov_sign.png"
+pdfmetrics.registerFont(TTFont("Times", font_path))
 output = PdfWriter()  # TODO WTF
 
 
@@ -20,12 +26,16 @@ class Stamper:
         self.stamp_paths = []
         self.pdf_paths = {}
 
-    def stamp_directory(self, directory_path, changes, cn_number, cn_date, author, author_signature, error_callback):
-        all_is_ok, absent_files, more_sheets, less_sheets = self._check_consistency(directory_path, changes)
+    def stamp_directory(self, directory_path, changes, cn_number, cn_date, author,
+                        author_signature, output_path, error_callback, info_callback, check_only=False):
+        all_is_ok, absent_files, more_sheets, less_sheets = self.check_consistency(directory_path, changes)
         if all_is_ok:
-            self._create_stamps(changes, cn_date, cn_number, author, directory_path)
-            self._do_stamping(directory_path, changes, author_signature)
-            self._delete_stamps()
+            if check_only:
+                info_callback("OK", "Ошибок не обнаружено")
+            else:
+                self._create_stamps(changes, cn_date, cn_number, author, directory_path)
+                self._do_stamping(directory_path, changes, author_signature, output_path)
+                self._delete_stamps()
         else:
             text = ""
             if absent_files:
@@ -40,7 +50,7 @@ class Stamper:
 
             error_callback("Проблемы с файлами PDF", f"{text}")
 
-    def _check_consistency(self, directory_path, changes):  # TODO check pages
+    def check_consistency(self, directory_path, changes):  # TODO check pages
         not_in_directory = []
         more_sheets = []
         less_sheets = []
@@ -86,21 +96,21 @@ class Stamper:
                         if this_doc_code not in more_sheets:
                             more_sheets.append(this_doc_code)
                         ok = False
-                    elif len(doc.pages) < total_pages + len(new_pages) + len(cancel_pages) \
-                            and not len(doc.pages) == len(pages) + len(new_pages) + len(cancel_pages):
-                        if this_doc_code not in less_sheets:
-                            less_sheets.append(this_doc_code)
-                        ok = False
+#                   elif len(doc.pages) < total_pages + len(new_pages) + len(cancel_pages) \
+#                           and not len(doc.pages) == len(pages) + len(new_pages) + len(cancel_pages):
+#                       if this_doc_code not in less_sheets:
+#                           less_sheets.append(this_doc_code)
+#                       ok = False
                 else:
                     if len(actual_filepath_list) > total_pages + len(new_pages) + len(cancel_pages):
                         if this_doc_code not in more_sheets:
                             more_sheets.append(this_doc_code)
                         ok = False
-                    elif len(actual_filepath_list) < total_pages + len(new_pages) + len(cancel_pages)\
-                            and not len(actual_filepath_list) == len(pages) + len(new_pages) + len(cancel_pages):
-                        if this_doc_code not in less_sheets:
-                            less_sheets.append(this_doc_code)
-                        ok = False
+#                    elif len(actual_filepath_list) < total_pages + len(new_pages) + len(cancel_pages)\
+#                            and not len(actual_filepath_list) == len(pages) + len(new_pages) + len(cancel_pages):
+#                        if this_doc_code not in less_sheets:
+#                            less_sheets.append(this_doc_code)
+#                        ok = False
 
         return ok, not_in_directory, more_sheets, less_sheets
 
@@ -142,7 +152,7 @@ class Stamper:
                                        patch_stamp_path, number_of_sections=changes_number)
                 self.stamp_paths.append(patch_stamp_path)
 
-    def _do_stamping(self, directory_path, changes, author_signature):
+    def _do_stamping(self, directory_path, changes, author_signature, output_path):
         for doc_code, pdf_path_list in self.pdf_paths.items():
             set_code = list(filter(lambda x: doc_code in x[1], changes.items()))[0][0]
             doc_changes = changes[set_code][doc_code]["changes"]
@@ -199,7 +209,7 @@ class Stamper:
                             stamped_page.cropbox.width - self._to_su(note_x),
                             self._to_su(note_y),
                         )
-                        self._sign(
+                        self.sign(
                             stamped_page,
                             author_signature,
                             stamped_page.cropbox.width - self._to_su(stamp_x),
@@ -208,8 +218,7 @@ class Stamper:
                         output.add_page(doc.pages[page_number - 1])
             else:
                 pass  # TODO make process multi-pdf docs
-        result_path = os.path.join(directory_path, "result.pdf")
-        output_stream = open(result_path, "wb")
+        output_stream = open(output_path, "wb")
         output.write(output_stream)
         output_stream.close()
         self.pdf_paths = {}
@@ -222,20 +231,37 @@ class Stamper:
         can.save()
         return PdfReader(packet)
 
-    def _sign(self, page, signature, stamp_x, stamp_y, scale):
+    def sign(self, page, signature, stamp_x, stamp_y, scale):
         img_temp = io.BytesIO()
         img_doc = canvas.Canvas(img_temp)
         img_doc.drawImage(signature,
-                          stamp_x + self._to_su(56),
+                          stamp_x + self._to_su(50),
                           stamp_y + self._to_su(16),
+                          self._to_su(17),
                           self._to_su(8),
-                          self._to_su(8),
-                          [0, 50, 0, 50, 0, 50]
+                          [200, 255, 200, 255, 200, 255],
+                          preserveAspectRatio=True
                           )
         img_doc.save()
         overlay = PdfReader(img_temp).get_page(0)
         page.transfer_rotation_to_content()
         page.merge_translated_page(overlay, 0, 0)
+
+        img_temp = io.BytesIO()
+        img_doc = canvas.Canvas(img_temp)
+        img_doc.drawImage(nesterov_sign,
+                          stamp_x + self._to_su(67),
+                          stamp_y + self._to_su(16),
+                          self._to_su(17),
+                          self._to_su(8),
+                          [200, 255, 200, 255, 200, 255],
+                          preserveAspectRatio=True
+                          )
+        img_doc.save()
+        overlay = PdfReader(img_temp).get_page(0)
+        page.transfer_rotation_to_content()
+        page.merge_translated_page(overlay, 0, 0)
+        # TODO remake sign
 
     @staticmethod
     def _to_su(number):

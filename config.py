@@ -7,6 +7,7 @@ DOC_SIZES_MAP = {
     "MFS": "A2_V",
     "MPB": "A3_V",
     "MTB": "A2_V",
+    "MTC": "A1_V",
     "MLH": "A2_V",
     "MAZ": "A4",
     "MPA": "A3_V"
@@ -33,5 +34,12 @@ SIZES_COORDINATES = {
         "note_x": 100,
         "note_y": 90,
         "scale": 1.0
-    }
+    },
+    "A1_V": {
+        "stamp_x": 341,
+        "stamp_y": 6,
+        "note_x": 100,
+        "note_y": 90,
+        "scale": 1.0
+    },
 }

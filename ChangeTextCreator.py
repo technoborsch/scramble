@@ -1,3 +1,5 @@
+import sys
+import os
 from docxtpl import DocxTemplate
 from ChangesExtractor import ChangesExtractor
 
@@ -5,16 +7,26 @@ from ChangesExtractor import ChangesExtractor
 class ChangeTextCreator:
 
     def __init__(self):
-        pass
+        if hasattr(sys, "_MEIPASS"):
+            self.template_path = os.path.join(sys._MEIPASS, r"template.docx")
+        else:
+            self.template_path = r"materials\template.docx"
 
-    def create(self, change_notice_info, changes, output_path):
-        doc = DocxTemplate(r"materials\template.docx")
-        change_notice_info["changes"] = self._generate_changes_text(changes)
+    def create(self, change_notice_info, changes, revisions_list, output_path):
+        doc = DocxTemplate(self.template_path)
+        change_notice_info["changes"] = self._generate_changes_text(changes, revisions_list)
         doc.render(change_notice_info)
         doc.save(output_path)
 
-    def _generate_changes_text(self, changes):
+    @staticmethod
+    def create_title(change_notice_info, template_path, output_path):
+        doc = DocxTemplate(template_path)
+        doc.render(change_notice_info)
+        doc.save(output_path)
+
+    def _generate_changes_text(self, changes, revisions_list):
         changes_text = {}
+        i = 0
         for set_code, set_changes in changes.items():
             russian_text = ""
             english_text = ""
@@ -135,7 +147,8 @@ class ChangeTextCreator:
                         english_text += f"\t- sheets {zipped_pages} — sheets were added to the document " \
                                         f"«{document_info['doc_eng_name']}»{description_en} (sheets are new);\n"
 
-            changes_text[set_code] = russian_text.strip(";\n") + "." + "\n\n" + english_text.strip(";\n") + "."
+            changes_text[set_code + revisions_list[i]] = russian_text.strip(";\n") + "." + "\n\n" + english_text.strip(";\n") + "."
+            i += 1
         return changes_text
 
     @staticmethod
