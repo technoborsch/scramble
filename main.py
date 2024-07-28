@@ -1,5 +1,7 @@
 from Interface import Interface
+import Guard
 
 if __name__ == "__main__":
-    program = Interface("filler")
-    program.run()
+    if Guard.check():
+        program = Interface()
+        program.run()
