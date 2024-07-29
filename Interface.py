@@ -41,6 +41,8 @@ class Interface:
         self.do_stamps_var.set(1)
         self.do_notes_var = tk.IntVar(self.window)
         self.do_notes_var.set(1)
+        self.do_archive_notes_var = tk.IntVar(self.window)
+        self.do_archive_notes_var.set(1)
 
         self.changes = {}
 
@@ -117,13 +119,19 @@ class Interface:
                                                state='disabled')
         self.check_consistency_button = tk.Button(self.window, text="Проверить PDF", command=self._check_directory,
                                                   state='disabled')
+        self.update_pdfs_button = tk.Button(self.window, text="Обновить файлы PDF", command=self._update_pdfs,
+                                            state='disabled')
         self.generate_change_notice_button = tk.Button(self.window, text="Собрать ИИ",
                                                        command=self._create_change_notice,
                                                        )
+        self.insert_change_notice_button = tk.Button(self.window, text="Вставить ИИ в документ",
+                                                     command=self._insert_change_notice)
         self.do_stamps_checkbox = tk.Checkbutton(self.window, text="Проставить штампы",
                                                  variable=self.do_stamps_var)
         self.do_notes_checkbox = tk.Checkbutton(self.window, text="Проставить пробивку",
                                                 variable=self.do_notes_var)
+        self.do_archive_notes_checkbox = tk.Checkbutton(self.window, text="Проставить архивные\nномера",
+                                                        variable=self.do_archive_notes_var)
         self.result_field = tk.scrolledtext.ScrolledText(self.window, width=45, height=8)
         self.settings_button = tk.Button(self.window, text="Настройки комплекта", command=self._open_settings)
 
@@ -144,6 +152,13 @@ class Interface:
 
     def _check_directory(self):
         self.main_manager.check_directory(messagebox.showerror, messagebox.showinfo)
+
+    def _update_pdfs(self):
+        self.main_manager.update_directory_pdfs(self.directory_path_var.get())
+        messagebox.showinfo("Успешно", "Файлы PDF в папке ИИ обновлены")
+
+    def _insert_change_notice(self, originals_directory):
+        self.main_manager.insert_change_notice(originals_directory)
 
     def place_set_entries(self):
         row = self.row_for_interface
@@ -183,11 +198,15 @@ class Interface:
 
     def _place_rest_of_interface(self, row):
         self.generate_title_button.grid(row=row, column=0, pady=10)
-        self.check_consistency_button.grid(row=row, column=1, pady=10)
-        self.generate_change_notice_button.grid(row=row, column=2, pady=10)
+        self.update_pdfs_button.grid(row=row, column=1, pady=10)
+        self.check_consistency_button.grid(row=row, column=2, pady=10)
+        row += 1
+        self.generate_change_notice_button.grid(row=row, column=0, pady=10)
+        self.insert_change_notice_button.grid(row=row, column=1, pady=10)
         row += 1
         self.do_stamps_checkbox.grid(row=row, column=0, pady=10)
         self.do_notes_checkbox.grid(row=row, column=1, pady=10)
+        self.do_archive_notes_checkbox.grid(row=row, column=2, pady=10)
         row += 1
         self.result_field.grid(row=row, columnspan=3, padx=7)
         row += 1
@@ -197,15 +216,25 @@ class Interface:
         path = self.directory_path_var.get()
         save_path = self.signature_path_var.get()
         if path and save_path:
-            self.generate_title_button.config(state='normal')
-            self.generate_change_notice_button.config(state='normal')
-            self.settings_button.config(state='normal')
-            self.check_consistency_button.config(state='normal')
+            for button in [
+                self.generate_title_button,
+                self.generate_change_notice_button,
+                self.settings_button,
+                self.check_consistency_button,
+                self.update_pdfs_button,
+                self.insert_change_notice_button
+            ]:
+                button.config(state="normal")
         else:
-            self.generate_title_button.config(state='disabled')
-            self.generate_change_notice_button.config(state='disabled')
-            self.settings_button.config(state='disabled')
-            self.check_consistency_button.config(state='disabled')
+            for button in [
+                self.generate_title_button,
+                self.generate_change_notice_button,
+                self.settings_button,
+                self.check_consistency_button,
+                self.update_pdfs_button,
+                self.insert_change_notice_button
+            ]:
+                button.config(state="disabled")
 
     def _print_message(self, text):
         self.result_field.insert(

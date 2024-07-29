@@ -7,6 +7,8 @@ from pypdf import PdfReader, PdfWriter
 
 from ChangeTextCreator import ChangeTextCreator
 from Stamper import Stamper
+from AcadPrinter import AcadPrinter
+from ExcelPrinter import ExcelPrinter
 
 
 class MainManager:
@@ -15,6 +17,8 @@ class MainManager:
         self.t = target
         self.creator = ChangeTextCreator()
         self.stamper = Stamper()
+        self.excel_printer = ExcelPrinter()
+        self.acad_printer = AcadPrinter()
 
     def stamp_directory(self, result_path, error_callback, info_callback, check_only=False):
         all_is_ok, absent_files, more_sheets, less_sheets, pdf_paths = self.check_consistency(
@@ -183,6 +187,47 @@ class MainManager:
                         ok = False
         return ok, not_in_directory, more_sheets, less_sheets, pdf_paths
 
+    def update_directory_pdfs(self, directory_path):
+        pdf_paths = []
+        word_paths = []
+        excel_paths = []
+        dwg_paths = []
+        for file in os.listdir(directory_path):
+            if file.endswith(".docx"):
+                word_paths.append(file)
+            elif file.endswith(".xlsx"):
+                excel_paths.append(file)
+            elif file.endswith(".dwg"):
+                dwg_paths.append(file)
+            elif file.endswith(".pdf"):
+                pdf_paths.append(file)
+        for word_file in word_paths:
+            print(word_file)
+            filename = word_file.replace(".docx", "")
+            pdf = [x for x in pdf_paths if x.startswith(filename)]
+            if len(pdf) < 1 or len(pdf) == 1 and self._compare_file_mod_times(directory_path, word_file, pdf[0]):
+                output = os.path.join(directory_path, word_file.replace(".docx", ".pdf"))
+                convert(os.path.join(directory_path, word_file), output)
+        for excel_file in excel_paths:
+            filename = excel_file.replace(".xlsx", "")
+            pdf = [x for x in pdf_paths if x.startswith(filename)]
+            if len(pdf) < 1 or len(pdf) == 1 and self._compare_file_mod_times(directory_path, excel_file, pdf[0]):
+                self.excel_printer.convert(os.path.join(directory_path, excel_file))
+        for dwg_file in dwg_paths:
+            # filename = dwg_file.replace(".dwg", "")
+            # pdf = [x for x in pdf_paths if x.startswith(filename)]
+            # if len(pdf) < 1 or len(pdf) == 1 and self._compare_file_mod_times(dwg_file, pdf[0]):
+            #     self.acad_printer.convert(os.path.join(directory_path, dwg_file))
+            pass
+
+    def insert_change_notice(self, originals_directory):
+        pass  # TODO
+
+    @staticmethod
+    def _compare_file_mod_times(directory_path, file1, file2):
+        return os.path.getmtime(os.path.join(directory_path, file1)) \
+               > os.path.getmtime(os.path.join(directory_path, file2))
+
     def _get_author_string(self):
         return self.t.last_name_ru_var.get() + " " + self.t.name_ru_var.get()[0] + "." \
                + self.t.surname_ru_var.get()[0] \
@@ -196,9 +241,6 @@ class MainManager:
                 for change in document_info["changes"]:
                     num += len(change["pages"])
         return num
-
-    def _print_directory(self):
-        pass  # TODO
 
     @staticmethod
     def _add_months(current_date, months_to_add):
