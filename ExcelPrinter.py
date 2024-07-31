@@ -15,7 +15,6 @@ class ExcelPrinter:
         wb.ActiveSheet.ExportAsFixedFormat(0, output_path)
 
     def close(self):
-        self.app.Quit()
         self.app = None
 
     def _setup(self):

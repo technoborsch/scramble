@@ -275,7 +275,7 @@ class Interface:
         self.window.wait_window(settings_window.window)
 
     def _create_change_notice(self):
-        self.main_manager.create_change_notice(messagebox.showerror, messagebox.showinfo)
+        self.main_manager.create_change_notice(messagebox.showerror, messagebox.showinfo, messagebox.askyesno)
 
     def _create_title_template(self):
         self.main_manager.create_title_template()

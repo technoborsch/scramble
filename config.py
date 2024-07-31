@@ -25,6 +25,13 @@ SIZES_COORDINATES = {
         "note_y": 12,
         "scale": 1.0
     },
+    "A4_V": {
+        "stamp_x": 151,
+        "stamp_y": 18,
+        "note_x": 70,
+        "note_y": 12,
+        "scale": 1.0
+    },
     "A3_V": {
         "stamp_x": 276,
         "stamp_y": 18,
@@ -65,4 +72,11 @@ INITIAL_SIZES = {
         "height": 594,
         "width": 841,
     },
+}
+
+PLOT_LIST_MAP = {
+    "A4": "ISO_full_bleed_A4_(210.00_x_297.00_MM)",
+    "A3_V": "ISO_full_bleed_A3_(420.00_x_297.00_MM)",
+    "A2_V": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+    "A1_V": "ISO_full_bleed_A1_(841.00_x_594.00_MM)",
 }

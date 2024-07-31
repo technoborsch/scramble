@@ -1,5 +1,6 @@
 import os
 import re
+import time
 from datetime import datetime
 
 from docx2pdf import convert
@@ -48,18 +49,8 @@ class MainManager:
                 )
                 self.stamper.delete_stamps()
         else:
-            text = ""
-            if absent_files:
-                absent_files_string = ", ".join(absent_files)
-                text += f"Отсутствуют PDF для документов: {absent_files_string}\n"
-            if more_sheets:
-                more_sheets_string = ", ".join(more_sheets)
-                text += f"Для следующих документов листов в PDF больше, чем нужно: {more_sheets_string}\n"
-            if less_sheets:
-                less_sheets_string = ", ".join(less_sheets)
-                text += f"Для следующих документов листов в PDF меньше, чем нужно: {less_sheets_string}\n"
-
-            error_callback("Проблемы с файлами PDF", f"{text}")
+            text = self._get_inconsistency_text(absent_files, more_sheets, less_sheets)
+            error_callback("Проблемы с файлами PDF", text)
 
     def check_directory(self, error_callback, info_callback):
         stamped_sheets_pdf_path = os.path.join(self.t.directory_path_var.get(), "result.pdf")
@@ -70,7 +61,20 @@ class MainManager:
             check_only=True
         )
 
-    def create_change_notice(self, error_callback, info_callback):
+    def create_change_notice(self, error_callback, info_callback, dialog_callback):
+        ok, not_in_directory, more_sheets, less_sheets, _ = self.check_consistency(
+            self.t.directory_path_var.get(), self.t.changes
+        )
+        if not ok:
+            text = self._get_inconsistency_text(not_in_directory, more_sheets, less_sheets)
+            error_callback("Ошибка", text)
+            return
+        old_pdfs = self._directory_has_old_pdfs(self.t.directory_path_var.get())
+        if len(old_pdfs) > 0:
+            text = self._get_old_pdfs_text(old_pdfs)
+            if not dialog_callback("Ошибка", text):
+                return
+        start_time = time.time()
         stamped_sheets_pdf_path = os.path.join(self.t.directory_path_var.get(), "result.pdf")
         self.stamp_directory(
             stamped_sheets_pdf_path,
@@ -100,6 +104,12 @@ class MainManager:
         merger.append(stamped_sheets_pdf_path)
         merger.write(output_stream)
         output_stream.close()
+        os.remove(stamped_sheets_pdf_path)
+        os.remove(title_path)
+        self._reduce_pdf_size(cn_path)
+        end_time = time.time()
+        text = self._get_output_text(start_time, end_time)
+        info_callback("Успешно!", f"{text}")
 
     def create_title_template(self):
         template_path = os.path.join(self.t.directory_path_var.get(), "template.docx")
@@ -202,23 +212,33 @@ class MainManager:
             elif file.endswith(".pdf"):
                 pdf_paths.append(file)
         for word_file in word_paths:
-            print(word_file)
             filename = word_file.replace(".docx", "")
-            pdf = [x for x in pdf_paths if x.startswith(filename)]
-            if len(pdf) < 1 or len(pdf) == 1 and self._compare_file_mod_times(directory_path, word_file, pdf[0]):
-                output = os.path.join(directory_path, word_file.replace(".docx", ".pdf"))
-                convert(os.path.join(directory_path, word_file), output)
+            if (not filename.startswith("ИИ")
+                    and not filename.startswith("template")
+                    and not filename.startswith("title")):
+                pdf = [x for x in pdf_paths if x.startswith(filename)]
+                if len(pdf) < 1 or len(pdf) == 1 and self._compare_file_mod_times(directory_path, word_file, pdf[0]):
+                    output = os.path.join(directory_path, word_file.replace(".docx", ".pdf"))
+                    convert(os.path.join(directory_path, word_file), output)
         for excel_file in excel_paths:
             filename = excel_file.replace(".xlsx", "")
             pdf = [x for x in pdf_paths if x.startswith(filename)]
             if len(pdf) < 1 or len(pdf) == 1 and self._compare_file_mod_times(directory_path, excel_file, pdf[0]):
                 self.excel_printer.convert(os.path.join(directory_path, excel_file))
         for dwg_file in dwg_paths:
-            # filename = dwg_file.replace(".dwg", "")
-            # pdf = [x for x in pdf_paths if x.startswith(filename)]
-            # if len(pdf) < 1 or len(pdf) == 1 and self._compare_file_mod_times(dwg_file, pdf[0]):
-            #     self.acad_printer.convert(os.path.join(directory_path, dwg_file))
-            pass
+            filename = dwg_file.replace(".dwg", "")
+            pdf = [x for x in pdf_paths if x.startswith(filename)]
+            if len(pdf) == 1 and self._compare_file_mod_times(directory_path, dwg_file, pdf[0]):
+                output_path = pdf[0]
+                self.acad_printer.convert(os.path.join(directory_path, dwg_file),
+                                          os.path.join(directory_path, output_path))
+            elif len(pdf) < 1:
+                output_path = filename + ".pdf"
+                self.acad_printer.convert(os.path.join(directory_path, dwg_file),
+                                          os.path.join(directory_path, output_path))
+
+        self.excel_printer.close()
+        self.acad_printer.close_acad()
 
     def insert_change_notice(self, originals_directory):
         pass  # TODO
@@ -228,11 +248,56 @@ class MainManager:
         return os.path.getmtime(os.path.join(directory_path, file1)) \
                > os.path.getmtime(os.path.join(directory_path, file2))
 
+    @staticmethod
+    def _get_inconsistency_text(not_in_directory, more_sheets, less_sheets):
+        text = ""
+        if not_in_directory:
+            absent_files_string = ", ".join(not_in_directory)
+            text += f"Отсутствуют PDF для документов: {absent_files_string}\n"
+        if more_sheets:
+            more_sheets_string = ", ".join(more_sheets)
+            text += f"Для следующих документов листов в PDF больше, чем нужно: {more_sheets_string}\n"
+        if less_sheets:
+            less_sheets_string = ", ".join(less_sheets)
+            text += f"Для следующих документов листов в PDF меньше, чем нужно: {less_sheets_string}\n"
+        return text
+
+    @staticmethod
+    def _get_old_pdfs_text(old_pdfs):
+        text = "Для следующих файлов файлы PDF созданы позже времени изменения оригинального файла:\n"
+        for file in old_pdfs:
+            text += file + "\n"
+        text += "Продолжить сборку ИИ?"
+        return text
+
     def _get_author_string(self):
         return self.t.last_name_ru_var.get() + " " + self.t.name_ru_var.get()[0] + "." \
                + self.t.surname_ru_var.get()[0] \
                + ". /\n" + self.t.last_name_en_var.get() + " " + self.t.name_en_var.get()[0] + "." \
                + self.t.surname_en_var.get()[0] + "."
+
+    @staticmethod
+    def _get_output_text(start_time, end_time):
+        cn_time_minutes = int((end_time - start_time) // 60)
+        cn_time_seconds = int((end_time - start_time) % 60)
+        output_text = ""
+        output_text += "ИИ успешно собрана.\n Время сборки: "
+        if cn_time_minutes:
+            if cn_time_minutes % 10 == 1:
+                output_text += f"{cn_time_minutes} минута"
+            elif cn_time_seconds == 2 or cn_time_minutes == 3 or cn_time_minutes == 4:
+                output_text += f"{cn_time_minutes} минуты"
+            else:
+                output_text += f"{cn_time_minutes} минут"
+        if cn_time_seconds:
+            output_text += " "
+            if cn_time_seconds % 10 == 1:
+                output_text += f"{cn_time_minutes} секунда"
+            elif cn_time_seconds == 2 or cn_time_seconds == 3 or cn_time_seconds == 4:
+                output_text += f"{cn_time_minutes} секунды"
+            else:
+                output_text += f"{cn_time_seconds} секунд"
+        return output_text
 
     def _count_attachments(self):
         num = 0
@@ -243,8 +308,41 @@ class MainManager:
         return num
 
     @staticmethod
+    def _reduce_pdf_size(path):
+        reader = PdfReader(path)
+        writer = PdfWriter()
+
+        for page in reader.pages:
+            writer.add_page(page)
+
+        if reader.metadata is not None:
+            writer.add_metadata(reader.metadata)
+
+        for page in writer.pages:
+            page.compress_content_streams()
+
+        with open(path, "wb") as fp:
+            writer.write(fp)
+
+    @staticmethod
     def _add_months(current_date, months_to_add):
         new_date = datetime(current_date.year + (current_date.month + months_to_add - 1) // 12,
                             (current_date.month + months_to_add - 1) % 12 + 1,
                             current_date.day, current_date.hour, current_date.minute, current_date.second)
         return new_date
+
+    def _directory_has_old_pdfs(self, directory_path):
+        originals = []
+        pdfs = []
+        old_pdfs = []
+        for filename in os.listdir(directory_path):
+            if filename.endswith(".dwg") or filename.endswith(".docx") or filename.endswith(".xlsx"):
+                originals.append(filename)
+            elif filename.endswith(".pdf"):
+                pdfs.append(filename)
+        for original in originals:
+            name = original.split(".")[0]
+            pdf = list(filter(lambda x: x.startswith(name), pdfs))[0]
+            if self._compare_file_mod_times(directory_path, pdf, original):
+                old_pdfs.append(original)
+        return old_pdfs
