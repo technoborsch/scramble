@@ -66,6 +66,12 @@ class SaveManager:
                     "set_name": self.t.set_name_var.get(),
                     "change_notice_number": self.t.change_notice_number_var.get(),
                     "change_notice_date": self.t.change_notice_date_var.get(),
+                    "agreed": self.t.agreed_var.get(),
+                    "checked": self.t.checked_var.get(),
+                    "examined": self.t.examined_var.get(),
+                    "approved": self.t.approved_var.get(),
+                    "estimates": self.t.estimates_var.get(),
+                    "safety": self.t.safety_var.get(),
                     "changes": self.t.changes
                 }
                 for set_code in self.t.changes.keys():
@@ -87,6 +93,12 @@ class SaveManager:
             self.t.set_name_var.set(restored_info["set_name"])
             self.t.change_notice_number_var.set(restored_info["change_notice_number"])
             self.t.change_notice_date_var.set(restored_info["change_notice_date"])
+            self.t.agreed_var.set(restored_info["agreed"])
+            self.t.checked_var.set(restored_info["checked"])
+            self.t.examined_var.set(restored_info["examined"])
+            self.t.approved_var.set(restored_info["approved"])
+            self.t.estimates_var.set(restored_info["estimates"])
+            self.t.safety_var.set(restored_info["safety"])
             for set_code in self.t.changes.keys():
                 setattr(self.t, set_code + "_rev_var", tk.StringVar())
                 getattr(self.t, set_code + "_rev_var").set(restored_info[set_code + "_rev"])

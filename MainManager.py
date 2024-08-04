@@ -10,6 +10,7 @@ from ChangeTextCreator import ChangeTextCreator
 from Stamper import Stamper
 from AcadPrinter import AcadPrinter
 from ExcelPrinter import ExcelPrinter
+from WordPrinter import WordPrinter
 
 
 class MainManager:
@@ -19,6 +20,7 @@ class MainManager:
         self.creator = ChangeTextCreator()
         self.stamper = Stamper()
         self.excel_printer = ExcelPrinter()
+        self.word_printer = WordPrinter()
         self.acad_printer = AcadPrinter()
 
     def stamp_directory(self, result_path, error_callback, info_callback, check_only=False):
@@ -106,6 +108,7 @@ class MainManager:
         output_stream.close()
         os.remove(stamped_sheets_pdf_path)
         os.remove(title_path)
+        os.remove(title_pdf_path)
         self._reduce_pdf_size(cn_path)
         end_time = time.time()
         text = self._get_output_text(start_time, end_time)
@@ -123,7 +126,16 @@ class MainManager:
                               "change_notice_date": "{{ change_notice_date }}",
                               "change_due_date": "{{ change_due_date }}",
                               "sheets_total": "{{ sheets_total }}",
-                              "author": "{{ author }}"}
+                              "author": "{{ author }}",
+                              "agreed": self.t.agreed_var.get(),
+                              "checked": self.t.checked_var.get(),
+                              "examined": self.t.examined_var.get(),
+                              "approved": self.t.approved_var.get(),
+                              "estimates_ru": self._get_estimates_text()[0],
+                              "safety_ru": self._get_safety_text()[0],
+                              "estimates_en": self._get_estimates_text()[1],
+                              "safety_en": self._get_safety_text()[1],
+                              }
 
         revisions_list = ["_C0" + getattr(self.t, x + "_rev_var").get() for x in self.t.changes.keys()]
         self.creator.create(change_notice_info, self.t.changes, revisions_list, template_path)
@@ -203,25 +215,24 @@ class MainManager:
         excel_paths = []
         dwg_paths = []
         for file in os.listdir(directory_path):
-            if file.endswith(".docx"):
+            if file.endswith(".docx") or file.endswith(".doc"):
                 word_paths.append(file)
-            elif file.endswith(".xlsx"):
+            elif file.endswith(".xlsx") or file.endswith(".xls") or file.endswith(".XLS"):
                 excel_paths.append(file)
             elif file.endswith(".dwg"):
                 dwg_paths.append(file)
             elif file.endswith(".pdf"):
                 pdf_paths.append(file)
         for word_file in word_paths:
-            filename = word_file.replace(".docx", "")
+            filename = word_file.replace(".docx", "").replace(".doc", "")
             if (not filename.startswith("ИИ")
                     and not filename.startswith("template")
                     and not filename.startswith("title")):
                 pdf = [x for x in pdf_paths if x.startswith(filename)]
                 if len(pdf) < 1 or len(pdf) == 1 and self._compare_file_mod_times(directory_path, word_file, pdf[0]):
-                    output = os.path.join(directory_path, word_file.replace(".docx", ".pdf"))
-                    convert(os.path.join(directory_path, word_file), output)
+                    self.word_printer.convert(os.path.join(directory_path, word_file))
         for excel_file in excel_paths:
-            filename = excel_file.replace(".xlsx", "")
+            filename = excel_file.replace(".xlsx", "").replace(".xls", "").replace(".XLS", "")
             pdf = [x for x in pdf_paths if x.startswith(filename)]
             if len(pdf) < 1 or len(pdf) == 1 and self._compare_file_mod_times(directory_path, excel_file, pdf[0]):
                 self.excel_printer.convert(os.path.join(directory_path, excel_file))
@@ -240,7 +251,14 @@ class MainManager:
         self.excel_printer.close()
         self.acad_printer.close_acad()
 
-    def insert_change_notice(self, originals_directory):
+    def insert_change_notice(self, originals_directory, change_notice_path, error_callback):
+        ok, absent_files, files_list = self._check_originals_consistency(originals_directory)
+        if not ok:
+            error_callback("Ошибка", self._get_absent_originals_text(absent_files))
+        else:
+            for set_code, file in files_list:
+                self._insert_change_notice_pages(self.t.changes[set_code],
+                                                 os.path.join(originals_directory, file), change_notice_path)
         pass  # TODO
 
     @staticmethod
@@ -270,6 +288,20 @@ class MainManager:
         text += "Продолжить сборку ИИ?"
         return text
 
+    def _get_estimates_text(self):
+        affect_estimates = self.t.estimates_var.get()
+        if affect_estimates:
+            return ["влияют", "affect"]
+        else:
+            return ["не влияют", "do not affect"]
+
+    def _get_safety_text(self):
+        affect_safety = self.t.safety_var.get()
+        if affect_safety:
+            return ["влияют", "affect"]
+        else:
+            return ["не влияют", "do not affect"]
+
     def _get_author_string(self):
         return self.t.last_name_ru_var.get() + " " + self.t.name_ru_var.get()[0] + "." \
                + self.t.surname_ru_var.get()[0] \
@@ -283,17 +315,19 @@ class MainManager:
         output_text = ""
         output_text += "ИИ успешно собрана.\n Время сборки: "
         if cn_time_minutes:
-            if cn_time_minutes % 10 == 1:
+            minutes_remainder = cn_time_minutes % 10
+            if minutes_remainder % 10 == 1:
                 output_text += f"{cn_time_minutes} минута"
-            elif cn_time_seconds == 2 or cn_time_minutes == 3 or cn_time_minutes == 4:
+            elif minutes_remainder == 2 or minutes_remainder == 3 or minutes_remainder == 4:
                 output_text += f"{cn_time_minutes} минуты"
             else:
                 output_text += f"{cn_time_minutes} минут"
         if cn_time_seconds:
             output_text += " "
-            if cn_time_seconds % 10 == 1:
+            seconds_remainder = cn_time_seconds % 10
+            if seconds_remainder == 1:
                 output_text += f"{cn_time_minutes} секунда"
-            elif cn_time_seconds == 2 or cn_time_seconds == 3 or cn_time_seconds == 4:
+            elif seconds_remainder == 2 or seconds_remainder == 3 or seconds_remainder == 4:
                 output_text += f"{cn_time_minutes} секунды"
             else:
                 output_text += f"{cn_time_seconds} секунд"
@@ -336,13 +370,68 @@ class MainManager:
         pdfs = []
         old_pdfs = []
         for filename in os.listdir(directory_path):
-            if filename.endswith(".dwg") or filename.endswith(".docx") or filename.endswith(".xlsx"):
+            if ((filename.endswith(".dwg") or filename.endswith(".docx") or filename.endswith(".xlsx"))
+                    and not filename.startswith("title") and not filename.startswith("template")
+                    and not filename.startswith("ИИ")):
                 originals.append(filename)
             elif filename.endswith(".pdf"):
                 pdfs.append(filename)
+        print(pdfs)
         for original in originals:
-            name = original.split(".")[0]
+            name = ".".join(original.split(".")[:-1])  # hack
+            print(name)
             pdf = list(filter(lambda x: x.startswith(name), pdfs))[0]
-            if self._compare_file_mod_times(directory_path, pdf, original):
+            if self._compare_file_mod_times(directory_path, original, pdf):
                 old_pdfs.append(original)
         return old_pdfs
+
+    def _check_originals_consistency(self, originals_dir):
+        absent = []
+        ok = True
+        files_list = []
+        for set_code in self.t.changes.keys():
+            exists = False
+            filename = ""
+            for file in os.listdir(originals_dir):
+                if file.split("_")[0] == set_code:
+                    exists = True
+                    filename = file
+                    files_list.append((set_code, filename))
+                    break
+            if not exists:
+                absent.append(filename)
+                ok = False
+        return ok, absent, files_list
+
+    @staticmethod
+    def _get_absent_originals_text(absent_list):
+        text = "В указанной папке со сканами отсутствуют сканы следующих комплектов:\n"
+        for filename in absent_list:
+            text += filename + "\n"
+        return text
+
+    def _insert_change_notice_pages(self, set_changes, original_path, change_notice_path):
+        output = PdfWriter()
+        original_doc = PdfReader(original_path)
+        change_notice_doc = PdfReader(change_notice_path)
+        start_page_index = len(change_notice_doc.pages) - self._count_attachments()
+        prepared_patch = []
+        current_cn_page = start_page_index
+        for doc_info in set_changes.values():
+            doc_start_index = int(doc_info["set_start_page"]) - 1
+            for change in doc_info["changes"]:
+                for page in change["pages"]:
+                    prepared_patch.append((doc_start_index + page, current_cn_page))
+                    current_cn_page += 1
+        current_patch_page = 0
+        for i, page in enumerate(original_doc.pages):
+            if i == prepared_patch[current_patch_page][0]:
+                output.add_page(change_notice_doc.pages[prepared_patch[current_patch_page][1]])
+                if current_patch_page < len(prepared_patch) - 1:
+                    current_patch_page += 1
+            else:
+                output.add_page(page)
+
+        result_filename = original_path.strip(".pdf") + " + " + change_notice_path.split("/")[-1]
+        with open(result_filename, "wb") as f:
+            output.write(f)

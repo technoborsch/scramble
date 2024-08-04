@@ -17,17 +17,17 @@ class ChangesExtractor:
         for doc_path in doc_paths:
             doc = docx.Document(doc_path)
             set_code = doc.tables[0].rows[1].cells[0].text.split("-")[0].replace("\n", "")
-
+            total_sheets = 0
             for table in doc.tables:
                 for row in table.rows[1:-2]:
                     row = row.cells
                     revision = row[2].text.lower()
                     split_revision = revision.split()
+                    number_of_sheets = split_revision[0].split("/")[1].split(".")[1]
                     if "изм" in revision:
                         if set_code not in changes.keys():
                             changes[set_code] = {}
                         doc_code = row[0].text.replace("\n", "")
-                        number_of_sheets = split_revision[0].split("/")[1].split(".")[1]
                         if doc_code not in changes[set_code].keys():
                             doc_ru_name, doc_eng_name = row[1].text.split("/")
                             if "MFS" in doc_code.split("-")[1]:
@@ -39,6 +39,7 @@ class ChangesExtractor:
                                 "doc_eng_name": doc_eng_name.strip(),
                                 "revision": revision_number,
                                 "number_of_sheets": number_of_sheets,
+                                "set_start_page": total_sheets,
                                 "set_position": set_position,
                                 "changes": [],
                                 "geometry": {},
@@ -46,6 +47,7 @@ class ChangesExtractor:
                         extracted_changes = self._extract_changed_sheets(revision, number_of_sheets)
                         changes[set_code][doc_code]["changes"] = extracted_changes
                         changes[set_code][doc_code]["geometry"] = self._fill_geometry(doc_code, extracted_changes)
+                    total_sheets += int(number_of_sheets)
             for set_code, set_changes in changes.items():
                 changes[set_code] = dict(sorted(set_changes.items(), key=lambda item: int(item[1]["set_position"])))
             changes = dict(sorted(changes.items(), key=lambda item: item[0]))
@@ -73,8 +75,6 @@ class ChangesExtractor:
                 if item:
                     pages, type_ = item.split("(")
                     if pages:
-                        print(item)
-                        print(pages)
                         pages = self._unzip_page_numbers(pages.strip(", "))
                     else:
                         pages = [num + 1 for num in range(0, int(number_of_sheets))]

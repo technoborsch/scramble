@@ -4,6 +4,57 @@ SECRET = "ODcxNDA4NDY0NTIyMTI1MjI0NzIx"
 CHAR_OFFSET = "24"
 PROGRAM_VERSION = 0.1
 
+AGREED_LIST = [
+    "Алексеев А.В./ Alekseev A.V.",
+    "Вяткин С.С./ Vyatkin S.S.",
+    "Гриценко О.Л./ Gritsenko O.L.",
+    "Миронов Е.А./ Mironov E.A.",
+    "Мулюкова Д.Ф./ Mulyukova D.F.",
+    "Мараховская О.Н./ Marakhovskaya O.N.",
+    "Пермяков С.Е./ Permyakov S.E.",
+    "Савицкий В.В./ Savitsky V.V.",
+    "Феняк Н.И./ Fenyak N.I.",
+    "Черноскулов В.С./ Chernoskulov V.S.",
+    "Томлехт Г.В./ Tomlekht G.V.",
+    "Буравкин А.В./ Buravkin A.V.",
+    "Богословский А.Г./ Bogoslovskiy A.G",
+    "Малышева А.Ю./ Malysheva A.Y.",
+    "Нестеров Д.А./ Nesterov D.A.",
+    "Латушкин А.В./ Latushkin A.V.",
+    "Кушнерёв Д.Ю./ Kushneryov D.Y."
+]
+
+CHECKED_LIST = [
+    "Алексеев А.В./ Alekseev A.V.",
+    "Вяткин С.С./ Vyatkin S.S.",
+    "Гриценко О.Л./ Gritsenko O.L.",
+    "Миронов Е.А./ Mironov E.A.",
+    "Мулюкова Д.Ф./ Mulyukova D.F.",
+    "Мараховская О.Н./ Marakhovskaya O.N.",
+    "Пермяков С.Е./ Permyakov S.E.",
+    "Савицкий В.В./ Savitsky V.V.",
+    "Феняк Н.И./ Fenyak N.I.",
+    "Черноскулов В.С./ Chernoskulov V.S.",
+    "Томлехт Г.В./ Tomlekht G.V.",
+    "Буравкин А.В./ Buravkin A.V.",
+    "Богословский А.Г./ Bogoslovskiy A.G",
+    "Малышева А.Ю./ Malysheva A.Y.",
+    "Нестеров Д.А./ Nesterov D.A.",
+    "Латушкин А.В./ Latushkin A.V.",
+    "Кушнерёв Д.Ю./ Kushneryov D.Y."
+]
+
+EXAMINED_LIST = [
+    "Полянская Е.Н./ Polianskaia E.N.",
+    "Мязина Л.С./ Myazina L.S.",
+    "Минаков С.А./ Minakov S.A.",
+]
+
+APPROVED_LIST = [
+    "Гончарок А.А./ Goncharok A.A.",
+    "Гнелицкий В.Г./ Gnelitskiy V.G."
+]
+
 DOC_SIZES_MAP = {
     "MAA": "A4",
     "MAB": "A4",

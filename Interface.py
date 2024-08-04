@@ -2,6 +2,7 @@ import ctypes
 import os
 import sys
 import tkinter as tk
+from tkinter import ttk
 import traceback
 from tkinter import scrolledtext, filedialog, messagebox, simpledialog, INSERT
 
@@ -37,6 +38,14 @@ class Interface:
         self.change_notice_number_var = tk.StringVar(self.window)
         self.change_notice_date_var = tk.StringVar(self.window)
         self.set_name_var = tk.StringVar(self.window)
+        self.agreed_var = tk.StringVar(self.window)
+        self.checked_var = tk.StringVar(self.window)
+        self.examined_var = tk.StringVar(self.window)
+        self.approved_var = tk.StringVar(self.window)
+        self.estimates_var = tk.IntVar(self.window)
+        self.estimates_var.set(1)
+        self.safety_var = tk.IntVar(self.window)
+        self.safety_var.set(0)
         self.do_stamps_var = tk.IntVar(self.window)
         self.do_stamps_var.set(1)
         self.do_notes_var = tk.IntVar(self.window)
@@ -114,6 +123,19 @@ class Interface:
                                                    textvariable=self.change_notice_number_var)
         self.change_notice_date_entry = tk.Entry(self.window, width=20, justify='right',
                                                  textvariable=self.change_notice_date_var)
+        self.agreed_label = tk.Label(self.window, text="Согласовано:")
+        self.agreed_combobox = ttk.Combobox(self.window, values=config.AGREED_LIST, width=15,
+                                            justify='right', textvariable=self.agreed_var)
+        self.checked_label = tk.Label(self.window, text="Проверил:")
+        self.checked_combobox = ttk.Combobox(self.window, values=config.CHECKED_LIST, width=15,
+                                             justify='right', textvariable=self.checked_var)
+        self.examined_label = tk.Label(self.window, text="Нормоконтроль:")
+        self.examined_combobox = ttk.Combobox(self.window, values=config.EXAMINED_LIST, width=15,
+                                             justify='right', textvariable=self.examined_var)
+        self.estimates_checkbox = tk.Checkbutton(self.window, text="Влияет на смету",
+                                                 variable=self.estimates_var)
+        self.safety_checkbox = tk.Checkbutton(self.window, text="Влияет на безопасность",
+                                                 variable=self.safety_var)
         # Плавающая нижняя часть интерфейса
         self.generate_title_button = tk.Button(self.window, text="Собрать титул", command=self._create_title_template,
                                                state='disabled')
@@ -157,8 +179,15 @@ class Interface:
         self.main_manager.update_directory_pdfs(self.directory_path_var.get())
         messagebox.showinfo("Успешно", "Файлы PDF в папке ИИ обновлены")
 
-    def _insert_change_notice(self, originals_directory):
-        self.main_manager.insert_change_notice(originals_directory)
+    def _insert_change_notice(self, *args):
+        messagebox.showinfo("Папка со сканами", "Укажите путь до папки со сканами комплектов")
+        originals_directory = os.path.abspath(filedialog.askdirectory())
+        messagebox.showinfo("Файл с ИИ", "Укажите путь до собранного ИИ")
+        filetypes = [("Файлы PDF", "*.pdf")]
+        f = filedialog.askopenfiles(mode="r", filetypes=filetypes)
+        paths = [i.name for i in f]
+        self.main_manager.insert_change_notice(originals_directory, paths[0], messagebox.showerror)
+        messagebox.showinfo("Успешно", "Файлы с примененными ИИ находятся в папке с оригиналами")
 
     def place_set_entries(self):
         row = self.row_for_interface
@@ -188,12 +217,27 @@ class Interface:
         self.change_notice_date_entry.grid(sticky="W", row=row, column=1, padx=7)
         row += 1
 
+        self.agreed_label.grid(sticky="W", row=row, column=0, padx=7)
+        self.checked_label.grid(sticky="W", row=row, column=1, padx=7)
+        self.examined_label.grid(sticky="W", row=row, column=2, padx=7)
+        row += 1
+
+        self.agreed_combobox.grid(sticky="W", row=row, column=0, padx=7)
+        self.checked_combobox.grid(sticky="W", row=row, column=1, padx=7)
+        self.examined_combobox.grid(sticky="W", row=row, column=2, padx=7)
+        row += 1
+
+        self.estimates_checkbox.grid(sticky="W", row=row, column=0, padx=7)
+        self.safety_checkbox.grid(sticky="W", row=row, column=2, padx=7)
+        row += 1
+
         self._place_rest_of_interface(row)
 
     def get_directory_path(self):
         path = os.path.abspath(filedialog.askdirectory())
         self.directory_path_var.set(path)
         self._restore_set_changes()
+        self._set_approved_variable()
         self._print_message(self.changes)  # TODO rework - more info
 
     def _place_rest_of_interface(self, row):
@@ -289,6 +333,13 @@ class Interface:
         self._save_settings()
         self.save_set_changes()
         self.window.destroy()
+
+    def _set_approved_variable(self):
+        code = int(list(self.changes.keys())[0].split(".")[1])
+        if code == 120:
+            self.approved_var.set(config.APPROVED_LIST[0])
+        else:
+            self.approved_var.set(config.APPROVED_LIST[1])
 
     @staticmethod
     def is_ru_lang_keyboard():

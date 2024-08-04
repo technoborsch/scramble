@@ -13,15 +13,18 @@ from config import INITIAL_SIZES, DOC_SIZES_MAP
 if hasattr(sys, "_MEIPASS"):
     font_path = os.path.join(sys._MEIPASS, r"timesnrcyrmt.ttf")
     nesterov_sign = os.path.join(sys._MEIPASS, r"nesterov_sign.png")
+    goncharok_sign = os.path.join(sys._MEIPASS, r"goncharok_sign.png")
+    gnelitskiy_sign = os.path.join(sys._MEIPASS, r"gnelitskiy_sign.png")
 else:
     font_path = r"materials\fonts\timesnrcyrmt.ttf"
     nesterov_sign = r"materials\nesterov_sign.png"
+    goncharok_sign = r"materials\goncharok_sign.png"
 pdfmetrics.registerFont(TTFont("Times", font_path))
-output = PdfWriter()  # TODO WTF
 
 
 class Stamper:
     def __init__(self):
+        self._reset()
         self.stamp_drawer = StampDrawer()
         self.stamp_paths = []
 
@@ -116,17 +119,19 @@ class Stamper:
                             self._sign(stamped_page, nesterov_sign, s_x, s_y,
                                        self._to_su(67), self._to_su(16), self._to_su(17), self._to_su(8), scale)
 
-                        if do_note:
+                        if do_note and int(doc_info["set_position"]) != 1:
                             note_text = f"{set_code}/{doc_info['set_position']}.{page_number}"
                             self._add_note(stamped_page, note_text, 3.5, note_x, note_y)  # TODO different sizes for notes
 
-                        output.add_page(doc.pages[page_number - 1])
+                        self.output.add_page(doc.pages[page_number - 1])
             else:
                 pass  # TODO make process multi-pdf docs
 
-        output_stream = open(output_path, "wb")
-        output.write(output_stream)
-        output_stream.close()
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        with open(output_path, "wb") as f:
+            self.output.write(f)
+        self._reset()
 
     def _stamp_page(self, stamp_path, stamped_page, calibration, x, y, scale):
         this_stamp = PdfReader(stamp_path)
@@ -193,7 +198,12 @@ class Stamper:
                    self._to_su(21.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)
         self._sign(page, nesterov_sign, 0, 0,
                    self._to_su(53.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)
+        self._sign(page, goncharok_sign, 0, 0,
+                   self._to_su(53.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)  # TODO
         return doc
+
+    def _reset(self):
+        self.output = PdfWriter()
 
     @staticmethod
     def _to_su(number):

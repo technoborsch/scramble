@@ -24,6 +24,7 @@ class SettingsWindow:
             "Число\nизменяемых\nучастков",
             "Описание\nна\nрусском",
             "Описание\nна\nанглийском",
+            "Формат",
             "Координата\nX\nпробивки",
             "Координата\nY\nпробивки",
             "Координата\nX\nштампа",
@@ -115,7 +116,7 @@ class SettingsWindow:
             num_of_sections_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "no_sections"
             setattr(self, num_of_sections_id + "%" + "label", tk.Label(self.in_f, text=num_of_sections))
             getattr(self, num_of_sections_id + "%" + "label").grid(row=row, column=this_column)
-        this_column += 3
+        this_column += 4
 
         note_x = str(list(filter(lambda x: x[0] == sheet_number, geometry))[0][1][2])
         note_x_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "note_x"

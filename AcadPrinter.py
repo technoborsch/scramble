@@ -27,7 +27,7 @@ class AcadPrinter:
             this_config.PlotType = pyautocad.ACAD.acExtents
 
             this_config.RefreshPlotDeviceInfo()
-            letters = dwg_path.split("-")[-1][:4].upper()
+            letters = dwg_path.split("-")[-1][:3].upper()
             size = config.DOC_SIZES_MAP[letters]
             this_config.CanonicalMediaName = config.PLOT_LIST_MAP[size]  # TODO make better chooses
             this_config.CenterPlot = True
@@ -65,5 +65,15 @@ if __name__ == "__main__":
     this_config.ConfigName = "DWG To PDF.pc3"
     print(this_config.GetCanonicalMediaNames())
     print(this_config.PlotType)
+    print(dwg.Limits)
+    print(dwg.Width)
+    print(dwg.Height)
+    print(dwg.ModelSpace.Units)
+    for object_ in app.iter_objects("Polyline"):
+        print(object_.ObjectName)
+    for object_ in app.iter_objects("rectangle"):
+        print(object_.ObjectName)
+    for object_ in app.iter_objects("line"):
+        print(object_.ObjectName)
 
     dwg.Close(False)
