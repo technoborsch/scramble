@@ -65,7 +65,15 @@ DOC_SIZES_MAP = {
     "MTC": "A1_V",
     "MLH": "A1_V",
     "MAZ": "A4",
-    "MPA": "A3_V"
+    "MPA": "A3_V",
+    "MFA": "A1_V"
+}
+
+ARCHIVE_MAP = {
+    "A4": False,
+    "A3_V": False,
+    "A2_V": True,
+    "A1_V": True,
 }
 
 SIZES_COORDINATES = {
@@ -84,15 +92,15 @@ SIZES_COORDINATES = {
         "scale": 1.0
     },
     "A3_V": {
-        "stamp_x": 276,
-        "stamp_y": 18,
-        "note_x": 75,
+        "stamp_x": 256,
+        "stamp_y": 3,
+        "note_x": 85,
         "note_y": 12.5,
-        "scale": 1.0
+        "scale": 0.8
     },
     "A2_V": {
         "stamp_x": 341,
-        "stamp_y": 6,
+        "stamp_y": 5,
         "note_x": 100,
         "note_y": 90,
         "scale": 1.0

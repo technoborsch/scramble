@@ -66,6 +66,8 @@ class SaveManager:
                     "set_name": self.t.set_name_var.get(),
                     "change_notice_number": self.t.change_notice_number_var.get(),
                     "change_notice_date": self.t.change_notice_date_var.get(),
+                    "archive_number": self.t.archive_number_var.get(),
+                    "archive_date": self.t.archive_date_var.get(),
                     "agreed": self.t.agreed_var.get(),
                     "checked": self.t.checked_var.get(),
                     "examined": self.t.examined_var.get(),
@@ -93,6 +95,8 @@ class SaveManager:
             self.t.set_name_var.set(restored_info["set_name"])
             self.t.change_notice_number_var.set(restored_info["change_notice_number"])
             self.t.change_notice_date_var.set(restored_info["change_notice_date"])
+            self.t.archive_number_var.set(restored_info["archive_number"])
+            self.t.archive_date_var.set(restored_info["archive_date"])
             self.t.agreed_var.set(restored_info["agreed"])
             self.t.checked_var.set(restored_info["checked"])
             self.t.examined_var.set(restored_info["examined"])

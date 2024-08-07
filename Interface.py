@@ -37,6 +37,8 @@ class Interface:
         self.directory_path_var = tk.StringVar(self.window)
         self.change_notice_number_var = tk.StringVar(self.window)
         self.change_notice_date_var = tk.StringVar(self.window)
+        self.archive_number_var = tk.StringVar(self.window)
+        self.archive_date_var = tk.StringVar(self.window)
         self.set_name_var = tk.StringVar(self.window)
         self.agreed_var = tk.StringVar(self.window)
         self.checked_var = tk.StringVar(self.window)
@@ -123,6 +125,12 @@ class Interface:
                                                    textvariable=self.change_notice_number_var)
         self.change_notice_date_entry = tk.Entry(self.window, width=20, justify='right',
                                                  textvariable=self.change_notice_date_var)
+        self.archive_number_label = tk.Label(self.window, text="Архивный номер комплекта:")
+        self.archive_date_label = tk.Label(self.window, text="Дата сдачи в архив:")
+        self.archive_number_entry = tk.Entry(self.window, width=20, justify='right',
+                                                   textvariable=self.archive_number_var)
+        self.archive_date_entry = tk.Entry(self.window, width=20, justify='right',
+                                                 textvariable=self.archive_date_var)
         self.agreed_label = tk.Label(self.window, text="Согласовано:")
         self.agreed_combobox = ttk.Combobox(self.window, values=config.AGREED_LIST, width=15,
                                             justify='right', textvariable=self.agreed_var)
@@ -215,6 +223,14 @@ class Interface:
         self.change_notice_number_entry.grid(sticky="W", row=row, column=0, padx=7)
 
         self.change_notice_date_entry.grid(sticky="W", row=row, column=1, padx=7)
+        row += 1
+
+        self.archive_number_label.grid(sticky="W", row=row, column=0, padx=7)
+        self.archive_date_label.grid(sticky="W", row=row, column=1, padx=7)
+        row += 1
+
+        self.archive_number_entry.grid(sticky="W", row=row, column=0, padx=7)
+        self.archive_date_entry.grid(sticky="W", row=row, column=1, padx=7)
         row += 1
 
         self.agreed_label.grid(sticky="W", row=row, column=0, padx=7)

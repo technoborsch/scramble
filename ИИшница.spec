@@ -5,12 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[
-    ('materials\\icon.ico', '.'),
-    ('materials\\template.docx', '.'),
-    ('materials\\nesterov_sign.png', '.'),
-    ('materials\\fonts\\timesnrcyrmt.ttf', '.'),
-    ],
+    datas=[('materials\\icon.ico', '.'), ('materials\\template.docx', '.'), ('materials\\nesterov_sign.png', '.'), ('materials\\gnelitskiy_sign.png', '.'), ('materials\\goncharok_sign.png', '.'), ('materials\\fonts\\timesnrcyrmt.ttf', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

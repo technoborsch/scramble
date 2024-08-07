@@ -8,7 +8,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from StampDrawer import StampDrawer
-from config import INITIAL_SIZES, DOC_SIZES_MAP
+from config import INITIAL_SIZES
 
 if hasattr(sys, "_MEIPASS"):
     font_path = os.path.join(sys._MEIPASS, r"timesnrcyrmt.ttf")
@@ -66,7 +66,8 @@ class Stamper:
                                        patch_stamp_path, number_of_sections=changes_number)
                 self.stamp_paths.append(patch_stamp_path)
 
-    def build_change_notice(self, directory_path, pdf_paths, changes, author_signature, output_path, do_stamp, do_note):
+    def build_change_notice(self, directory_path, pdf_paths, changes, author_signature,
+                            output_path, do_stamp, do_note, do_archive_note, archive_number, archive_date):
         for doc_code, pdf_path_list in pdf_paths.items():
             set_code = list(filter(lambda x: doc_code in x[1], changes.items()))[0][0]
             doc_changes = changes[set_code][doc_code]["changes"]
@@ -107,8 +108,7 @@ class Stamper:
                             stamped_page = doc.pages[page_number - 1]
                         else:
                             stamped_page = doc.pages[this_doc_page]
-                            this_doc_page += 1
-                        calibration = self._get_calibration(stamped_page, doc_code)
+                        calibration = self._get_calibration(stamped_page, doc_info["page_size"])
 
                         if do_stamp:
                             s_x, s_y = self._stamp_page(this_stamp_path, stamped_page, calibration, stamp_x, stamp_y, scale)
@@ -122,8 +122,13 @@ class Stamper:
                         if do_note and int(doc_info["set_position"]) != 1:
                             note_text = f"{set_code}/{doc_info['set_position']}.{page_number}"
                             self._add_note(stamped_page, note_text, 3.5, note_x, note_y)  # TODO different sizes for notes
-
-                        self.output.add_page(doc.pages[page_number - 1])
+                        if do_archive_note and bool(doc_info["has_archive_number"]):
+                            self._add_archive_note(stamped_page, archive_number, archive_date)  # TODO иногда плохо расставляет, нужно добавить логику с "Номером пакета" в файлах MDB
+                        if len(doc.pages) >= int(doc_info["number_of_sheets"]):
+                            self.output.add_page(doc.pages[page_number - 1])
+                        else:
+                            self.output.add_page(doc.pages[this_doc_page])
+                            this_doc_page += 1
             else:
                 pass  # TODO make process multi-pdf docs
 
@@ -143,6 +148,7 @@ class Stamper:
             this_stamp.pages[0],
             stamped_page.cropbox.width - self._to_su(x),
             self._to_su(y),
+            over=False
         )
         return stamped_page.cropbox.width - self._to_su(x), self._to_su(y)
 
@@ -153,10 +159,17 @@ class Stamper:
             self._to_su(y),
         )
 
-    def _get_calibration(self, stamped_page, doc_code):
-        this_doc_letters = DOC_SIZES_MAP[doc_code.split("-")[-1][:3].upper()]
-        intended_height = self._to_su(INITIAL_SIZES[this_doc_letters]["height"])
-        if this_doc_letters.endswith("V"):
+    def _add_archive_note(self, stamped_page, number, date):
+        number_page = self._make_note(number, self._to_su(2)).pages[0].rotate(270)
+        number_page.transfer_rotation_to_content()
+        date_page = self._make_note(date, self._to_su(2)).pages[0].rotate(270)
+        date_page.transfer_rotation_to_content()
+        stamped_page.merge_translated_page(number_page, self._to_su(9), self._to_su(9))
+        stamped_page.merge_translated_page(date_page, self._to_su(9), self._to_su(35))
+
+    def _get_calibration(self, stamped_page, page_size):
+        intended_height = self._to_su(INITIAL_SIZES[page_size]["height"])
+        if page_size.endswith("V"):
             real_height = min(stamped_page.cropbox.width, stamped_page.cropbox.height)
         else:
             real_height = max(stamped_page.cropbox.width, stamped_page.cropbox.height)
@@ -164,7 +177,7 @@ class Stamper:
 
     def _make_note(self, text, size):
         packet = io.BytesIO()
-        can = canvas.Canvas(packet, pagesize=(self._to_su(70), self._to_su(10)))
+        can = canvas.Canvas(packet, pagesize=(self._to_su(78), self._to_su(10)))
         can.setFont("Times", self._to_su(size))
         can.drawString(0, 0, text)
         can.save()
@@ -191,15 +204,18 @@ class Stamper:
             base_y + y * scale
         )
 
-    def sign_title(self, title_path, author_signature):
+    def sign_title(self, title_path, author_signature, gnelitskiy=False):
         doc = PdfReader(title_path)
         page = doc.pages[0]
         self._sign(page, author_signature, 0, 0,
                    self._to_su(21.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)
         self._sign(page, nesterov_sign, 0, 0,
                    self._to_su(53.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)
-        self._sign(page, goncharok_sign, 0, 0,
-                   self._to_su(53.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)  # TODO
+        approve_sign = goncharok_sign
+        if gnelitskiy:
+            approve_sign = gnelitskiy_sign
+        self._sign(page, approve_sign, 0, 0,
+                   self._to_su(112.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)
         return doc
 
     def _reset(self):

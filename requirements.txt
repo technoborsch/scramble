@@ -11,3 +11,4 @@ docxtpl~=0.17.0
 transliterate~=1.10.2
 tkScrolledFrame~=1.0.4
 docx2pdf~=0.1.8
+tqdm~=4.66.4

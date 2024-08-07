@@ -1,6 +1,9 @@
 import tkinter as tk
+from tkinter.ttk import Combobox, Checkbutton
 from tkinter import Frame
 from tkscrolledframe import ScrolledFrame
+
+from config import SIZES_COORDINATES
 
 
 class SettingsWindow:
@@ -9,7 +12,7 @@ class SettingsWindow:
         self.master = master
         self.window = tk.Toplevel(master.window)
         self.window.title("Настройки комплекта")
-        self.sf = ScrolledFrame(self.window, width=1350, height=700)
+        self.sf = ScrolledFrame(self.window, width=1470, height=700)
         self.sf.pack(side="top", expand=1, fill="both")
         self.sf.bind_arrow_keys(self.window)
         self.sf.bind_scroll_wheel(self.window)
@@ -30,6 +33,7 @@ class SettingsWindow:
             "Координата\nX\nштампа",
             "Координата\nY\nштампа",
             "Масштаб\nштампа",
+            "Архивник",
         ])
         this_row += 1
 
@@ -42,6 +46,17 @@ class SettingsWindow:
                 doc_code_label = doc_code + "_label"
                 setattr(self, doc_code_label, tk.Label(self.in_f, text=doc_code))
                 getattr(self, doc_code_label).grid(row=this_row, column=1)
+                doc_format_var = set_code + "%" + doc_code + "%format_var"
+                setattr(self, doc_format_var, tk.StringVar(self.in_f, value=doc_info["page_size"]))
+                doc_format_combobox = set_code + "%" + doc_code + "%format_combobox"
+                setattr(self, doc_format_combobox, Combobox(self.in_f, values=list(SIZES_COORDINATES.keys()),
+                                                            textvariable=getattr(self, doc_format_var)))
+                getattr(self, doc_format_combobox).grid(row=this_row, column=7)
+                do_archive_note_var = doc_code + "%do_archive_note_var"
+                setattr(self, do_archive_note_var, tk.IntVar(self.in_f, value=int(doc_info["has_archive_number"])))
+                do_archive_note_check = doc_code + "%do_archive_note_check"
+                setattr(self, do_archive_note_check, Checkbutton(self.in_f, variable=getattr(self, do_archive_note_var)))
+                getattr(self, do_archive_note_check).grid(row=this_row, column=13)
                 this_row += 1
                 for i, change in enumerate(doc_info["changes"]):
                     change_description_ru = change["change_description_ru"]
@@ -66,6 +81,7 @@ class SettingsWindow:
                                      textvariable=getattr(self, change_description_en_id + "%" + "var")))
                     getattr(self, change_description_en_id + "%" + "entry").grid(sticky="W", row=this_row, column=6, padx=7)
 
+                    # TODO Add format change + mass geometry change
                     for sheet in change["pages"]:
                         self.add_change_line(set_code, doc_code, int(sheet), this_row, 2, change, doc_info["geometry"])
                         this_row += 1
@@ -254,6 +270,13 @@ class SettingsWindow:
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         doc_geometry[i] = (int(sheet_number), (g[0], g[1], g[2], g[3], value))
+
+            if attribute.endswith("%format_var"):
+                setting_name = attribute[:-len("%format_var")]
+                value = getattr(self, attribute).get()
+                set_code, doc_code = setting_name.split("%")
+                doc_info = self.master.changes[set_code][doc_code]
+                doc_info["page_size"] = value
         self.master.save_set_changes()
         self.on_exit()
 

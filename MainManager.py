@@ -47,7 +47,10 @@ class MainManager:
                     self.t.signature_path_var.get(),
                     result_path,
                     bool(self.t.do_stamps_var.get()),
-                    bool(self.t.do_notes_var.get())
+                    bool(self.t.do_notes_var.get()),
+                    bool(self.t.do_archive_notes_var.get()),
+                    self.t.archive_number_var.get(),
+                    self.t.archive_date_var.get()
                 )
                 self.stamper.delete_stamps()
         else:
@@ -71,9 +74,9 @@ class MainManager:
             text = self._get_inconsistency_text(not_in_directory, more_sheets, less_sheets)
             error_callback("Ошибка", text)
             return
-        old_pdfs = self._directory_has_old_pdfs(self.t.directory_path_var.get())
-        if len(old_pdfs) > 0:
-            text = self._get_old_pdfs_text(old_pdfs)
+        old_pdfs, no_originals = self._directory_has_old_pdfs(self.t.directory_path_var.get())
+        if len(old_pdfs) > 0 or len(no_originals) > 0:
+            text = self._get_old_pdfs_text(old_pdfs, no_originals)
             if not dialog_callback("Ошибка", text):
                 return
         start_time = time.time()
@@ -117,7 +120,8 @@ class MainManager:
     def create_title_template(self):
         template_path = os.path.join(self.t.directory_path_var.get(), "template.docx")
         pdf_path = os.path.join(self.t.directory_path_var.get(), "dummy.pdf")
-        sets_plus_revisions = list(map(lambda x: x + "_C0" + getattr(self.t, x + "_rev_var").get(), self.t.changes.keys()))
+        sets_plus_revisions = list(
+            map(lambda x: x + "_C0" + getattr(self.t, x + "_rev_var").get(), self.t.changes.keys()))
         change_notice_sets = "\n".join(sets_plus_revisions)
         change_notice_info = {"change_notice_number": self.t.change_notice_number_var.get(),
                               "change_notice_sets": change_notice_sets,
@@ -192,7 +196,7 @@ class MainManager:
                         if this_doc_code not in more_sheets:
                             more_sheets.append(this_doc_code)
                         ok = False
-                    elif len(doc.pages) < total_pages + len(cancel_pages)\
+                    elif len(doc.pages) < total_pages + len(cancel_pages) \
                             and not len(doc.pages) == len(pages) + len(cancel_pages):
                         if this_doc_code not in less_sheets:
                             less_sheets.append(this_doc_code)
@@ -259,12 +263,11 @@ class MainManager:
             for set_code, file in files_list:
                 self._insert_change_notice_pages(self.t.changes[set_code],
                                                  os.path.join(originals_directory, file), change_notice_path)
-        pass  # TODO
 
     @staticmethod
     def _compare_file_mod_times(directory_path, file1, file2):
         return os.path.getmtime(os.path.join(directory_path, file1)) \
-               > os.path.getmtime(os.path.join(directory_path, file2))
+            > os.path.getmtime(os.path.join(directory_path, file2))
 
     @staticmethod
     def _get_inconsistency_text(not_in_directory, more_sheets, less_sheets):
@@ -281,10 +284,16 @@ class MainManager:
         return text
 
     @staticmethod
-    def _get_old_pdfs_text(old_pdfs):
-        text = "Для следующих файлов файлы PDF созданы позже времени изменения оригинального файла:\n"
-        for file in old_pdfs:
-            text += file + "\n"
+    def _get_old_pdfs_text(old_pdfs, no_originals):
+        text = ""
+        if len(old_pdfs) > 0:
+            text += "Для следующих файлов файлы PDF созданы позже времени изменения оригинального файла:\n"
+            for file in old_pdfs:
+                text += file + "\n"
+        if len(no_originals) > 0:
+            text += "Для следующих файлов PDF нет оригиналов:\n"
+            for file in no_originals:
+                text += file + "\n"
         text += "Продолжить сборку ИИ?"
         return text
 
@@ -304,9 +313,9 @@ class MainManager:
 
     def _get_author_string(self):
         return self.t.last_name_ru_var.get() + " " + self.t.name_ru_var.get()[0] + "." \
-               + self.t.surname_ru_var.get()[0] \
-               + ". /\n" + self.t.last_name_en_var.get() + " " + self.t.name_en_var.get()[0] + "." \
-               + self.t.surname_en_var.get()[0] + "."
+            + self.t.surname_ru_var.get()[0] \
+            + ". /\n" + self.t.last_name_en_var.get() + " " + self.t.name_en_var.get()[0] + "." \
+            + self.t.surname_en_var.get()[0] + "."
 
     @staticmethod
     def _get_output_text(start_time, end_time):
@@ -370,20 +379,24 @@ class MainManager:
         pdfs = []
         old_pdfs = []
         for filename in os.listdir(directory_path):
-            if ((filename.endswith(".dwg") or filename.endswith(".docx") or filename.endswith(".xlsx"))
+            if (filename.startswith("AKU")
+                    and (filename.endswith(".dwg") or filename.endswith(".docx") or filename.endswith(".xlsx"))
                     and not filename.startswith("title") and not filename.startswith("template")
                     and not filename.startswith("ИИ")):
                 originals.append(filename)
             elif filename.endswith(".pdf"):
                 pdfs.append(filename)
-        print(pdfs)
         for original in originals:
             name = ".".join(original.split(".")[:-1])  # hack
-            print(name)
             pdf = list(filter(lambda x: x.startswith(name), pdfs))[0]
             if self._compare_file_mod_times(directory_path, original, pdf):
                 old_pdfs.append(original)
-        return old_pdfs
+            pdfs.remove(pdf)
+        filtered_pdfs = list(filter(lambda x: len(x.split("-")) == 2
+                                              and not x.startswith("title")
+                                              and not x.startswith("template")
+                                              and not x.startswith("ИИ"), pdfs))
+        return old_pdfs, filtered_pdfs
 
     def _check_originals_consistency(self, originals_dir):
         absent = []
@@ -411,8 +424,8 @@ class MainManager:
         return text
 
     def _insert_change_notice_pages(self, set_changes, original_path, change_notice_path):
-        output = PdfWriter()
-        original_doc = PdfReader(original_path)
+        output = PdfWriter()  # TODO не работает с новыми, аннулированными страницами
+        original_doc = PdfReader(original_path)  # TODO не работает, когда 2 и более комплектов
         change_notice_doc = PdfReader(change_notice_path)
         start_page_index = len(change_notice_doc.pages) - self._count_attachments()
         prepared_patch = []

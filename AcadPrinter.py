@@ -28,7 +28,7 @@ class AcadPrinter:
 
             this_config.RefreshPlotDeviceInfo()
             letters = dwg_path.split("-")[-1][:3].upper()
-            size = config.DOC_SIZES_MAP[letters]
+            size = config.DOC_SIZES_MAP[letters]  # TODO now it is in doc info
             this_config.CanonicalMediaName = config.PLOT_LIST_MAP[size]  # TODO make better chooses
             this_config.CenterPlot = True
             this_config.PlotWithPlotStyles = True

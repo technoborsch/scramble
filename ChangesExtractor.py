@@ -2,7 +2,7 @@ import os
 import docx
 import pprint
 
-from config import DOC_SIZES_MAP, SIZES_COORDINATES
+from config import DOC_SIZES_MAP, SIZES_COORDINATES, ARCHIVE_MAP
 from copy import copy
 
 
@@ -25,7 +25,7 @@ class ChangesExtractor:
                     split_revision = revision.split()
                     number_of_sheets = split_revision[0].split("/")[1].split(".")[1]
                     if "изм" in revision:
-                        if set_code not in changes.keys():
+                        if set_code not in changes.keys():  # TODO make update changes, not completely remove them
                             changes[set_code] = {}
                         doc_code = row[0].text.replace("\n", "")
                         if doc_code not in changes[set_code].keys():
@@ -42,6 +42,8 @@ class ChangesExtractor:
                                 "set_start_page": total_sheets,
                                 "set_position": set_position,
                                 "changes": [],
+                                "has_archive_number": ARCHIVE_MAP[DOC_SIZES_MAP[doc_code.split("-")[-1][:3]]],
+                                "page_size": DOC_SIZES_MAP[doc_code.split("-")[-1][:3]],
                                 "geometry": {},
                             }
                         extracted_changes = self._extract_changed_sheets(revision, number_of_sheets)
