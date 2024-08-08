@@ -9,7 +9,7 @@ class NullWriter:
 
 
 # Override stdout and stderr with NullWriter in GUI --noconsole mode
-# This allow to avoid a bug where tqdm try to write on NoneType
+# This allows to avoid a bug where tqdm try to write on NoneType
 if sys.stdout is None:
     sys.stdout = NullWriter()
 

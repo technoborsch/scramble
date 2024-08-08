@@ -46,12 +46,74 @@ class SettingsWindow:
                 doc_code_label = doc_code + "_label"
                 setattr(self, doc_code_label, tk.Label(self.in_f, text=doc_code))
                 getattr(self, doc_code_label).grid(row=this_row, column=1)
+
                 doc_format_var = set_code + "%" + doc_code + "%format_var"
                 setattr(self, doc_format_var, tk.StringVar(self.in_f, value=doc_info["page_size"]))
                 doc_format_combobox = set_code + "%" + doc_code + "%format_combobox"
                 setattr(self, doc_format_combobox, Combobox(self.in_f, values=list(SIZES_COORDINATES.keys()),
                                                             textvariable=getattr(self, doc_format_var)))
                 getattr(self, doc_format_combobox).grid(row=this_row, column=7)
+                #
+                # note_x = str(list(filter(lambda x: x[0] == sheet_number, geometry))[0][1][2])
+                # note_x_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "note_x"
+                # setattr(self, note_x_id + "%" + "var", tk.DoubleVar(self.in_f))
+                # getattr(self, note_x_id + "%" + "var").set(note_x)
+                # setattr(self, note_x_id + "%" + "entry",
+                #         tk.Entry(self.in_f,
+                #                  width=10,
+                #                  justify="left",
+                #                  textvariable=getattr(self, note_x_id + "%" + "var")))
+                # getattr(self, note_x_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
+                # this_column += 1
+                #
+                # note_y = str(list(filter(lambda x: x[0] == sheet_number, geometry))[0][1][3])
+                # note_y_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "note_y"
+                # setattr(self, note_y_id + "%" + "var", tk.DoubleVar(self.in_f))
+                # getattr(self, note_y_id + "%" + "var").set(note_y)
+                # setattr(self, note_y_id + "%" + "entry",
+                #         tk.Entry(self.in_f,
+                #                  width=10,
+                #                  justify="left",
+                #                  textvariable=getattr(self, note_y_id + "%" + "var")))
+                # getattr(self, note_y_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
+                # this_column += 1
+                #
+                # stamp_x = str(list(filter(lambda x: x[0] == sheet_number, geometry))[0][1][0])
+                # stamp_x_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "stamp_x"
+                # setattr(self, stamp_x_id + "%" + "var", tk.StringVar(self.in_f))
+                # getattr(self, stamp_x_id + "%" + "var").set(stamp_x)
+                # setattr(self, stamp_x_id + "%" + "entry",
+                #         tk.Entry(self.in_f,
+                #                  width=10,
+                #                  justify="left",
+                #                  textvariable=getattr(self, stamp_x_id + "%" + "var")))
+                # getattr(self, stamp_x_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
+                # this_column += 1
+                #
+                # stamp_y = str(list(filter(lambda x: x[0] == sheet_number, geometry))[0][1][1])
+                # stamp_y_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "stamp_y"
+                # setattr(self, stamp_y_id + "%" + "var", tk.StringVar(self.in_f))
+                # getattr(self, stamp_y_id + "%" + "var").set(stamp_y)
+                # setattr(self, stamp_y_id + "%" + "entry",
+                #         tk.Entry(self.in_f,
+                #                  width=10,
+                #                  justify="left",
+                #                  textvariable=getattr(self, stamp_y_id + "%" + "var")))
+                # getattr(self, stamp_y_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
+                # this_column += 1
+                #
+                # scale = str(list(filter(lambda x: x[0] == sheet_number, geometry))[0][1][4])
+                # scale_id = set_code + "%" + document_code + "%" + str(sheet_number) + "%" + "scale"
+                # setattr(self, scale_id + "%" + "var", tk.StringVar(self.in_f))
+                # getattr(self, scale_id + "%" + "var").set(scale)
+                # setattr(self, scale_id + "%" + "entry",
+                #         tk.Entry(self.in_f,
+                #                  width=10,
+                #                  justify="left",
+                #                  textvariable=getattr(self, scale_id + "%" + "var")))
+                # getattr(self, scale_id + "%" + "entry").grid(sticky="W", row=row, column=this_column, padx=7)
+                # this_column += 1
+
                 do_archive_note_var = doc_code + "%do_archive_note_var"
                 setattr(self, do_archive_note_var, tk.IntVar(self.in_f, value=int(doc_info["has_archive_number"])))
                 do_archive_note_check = doc_code + "%do_archive_note_check"

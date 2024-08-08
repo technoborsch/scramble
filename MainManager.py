@@ -67,6 +67,12 @@ class MainManager:
         )
 
     def create_change_notice(self, error_callback, info_callback, dialog_callback):
+        for set_code, set_docs in self.t.changes.items():
+            for doc_code, doc_info in set_docs.items():
+                if doc_info["page_size"] is None:
+                    error_callback("Ошибка", "Есть документы с незаданными форматами. Откройте настройки комплекта и "
+                                             "задайте форматы для всех документов")
+                    return
         ok, not_in_directory, more_sheets, less_sheets, _ = self.check_consistency(
             self.t.directory_path_var.get(), self.t.changes
         )
@@ -260,14 +266,17 @@ class MainManager:
         if not ok:
             error_callback("Ошибка", self._get_absent_originals_text(absent_files))
         else:
+            set_start_page = 0
             for set_code, file in files_list:
-                self._insert_change_notice_pages(self.t.changes[set_code],
-                                                 os.path.join(originals_directory, file), change_notice_path)
+                this_set_pages = self._insert_change_notice_pages(self.t.changes[set_code],
+                                                                  os.path.join(originals_directory, file),
+                                                                  change_notice_path, set_start_page)
+                set_start_page += this_set_pages
 
     @staticmethod
     def _compare_file_mod_times(directory_path, file1, file2):
         return os.path.getmtime(os.path.join(directory_path, file1)) \
-            > os.path.getmtime(os.path.join(directory_path, file2))
+               > os.path.getmtime(os.path.join(directory_path, file2))
 
     @staticmethod
     def _get_inconsistency_text(not_in_directory, more_sheets, less_sheets):
@@ -313,9 +322,9 @@ class MainManager:
 
     def _get_author_string(self):
         return self.t.last_name_ru_var.get() + " " + self.t.name_ru_var.get()[0] + "." \
-            + self.t.surname_ru_var.get()[0] \
-            + ". /\n" + self.t.last_name_en_var.get() + " " + self.t.name_en_var.get()[0] + "." \
-            + self.t.surname_en_var.get()[0] + "."
+               + self.t.surname_ru_var.get()[0] \
+               + ". /\n" + self.t.last_name_en_var.get() + " " + self.t.name_en_var.get()[0] + "." \
+               + self.t.surname_en_var.get()[0] + "."
 
     @staticmethod
     def _get_output_text(start_time, end_time):
@@ -423,28 +432,43 @@ class MainManager:
             text += filename + "\n"
         return text
 
-    def _insert_change_notice_pages(self, set_changes, original_path, change_notice_path):
+    def _insert_change_notice_pages(self, set_changes, original_path, change_notice_path, set_start_page):
         output = PdfWriter()  # TODO не работает с новыми, аннулированными страницами
         original_doc = PdfReader(original_path)  # TODO не работает, когда 2 и более комплектов
         change_notice_doc = PdfReader(change_notice_path)
         start_page_index = len(change_notice_doc.pages) - self._count_attachments()
         prepared_patch = []
-        current_cn_page = start_page_index
+        new_cancelled_correction = 0
+        current_cn_page = start_page_index + set_start_page
         for doc_info in set_changes.values():
             doc_start_index = int(doc_info["set_start_page"]) - 1
-            for change in doc_info["changes"]:
+            for change in doc_info["changes"]:  # if change type == new or == cancelled...
+                correction = 0
+                if change["change_type"] == "new" or change["change_type"] == "cancel":
+                    correction = len(change["pages"])
                 for page in change["pages"]:
-                    prepared_patch.append((doc_start_index + page, current_cn_page))
+                    prepared_patch.append((doc_start_index + page, current_cn_page, correction))
                     current_cn_page += 1
         current_patch_page = 0
+        current_correction = 0
+        total_pages = 0
         for i, page in enumerate(original_doc.pages):
-            if i == prepared_patch[current_patch_page][0]:
+            correction = prepared_patch[current_patch_page][2]
+            if correction:
+                for j in range(0, correction + 1):
+                    output.add_page(change_notice_doc.pages[prepared_patch[current_patch_page][1]])
+                    if current_patch_page < len(prepared_patch) - 1:
+                        current_patch_page += 1
+                current_correction += correction
+            if i == prepared_patch[current_patch_page][0] + current_correction:
                 output.add_page(change_notice_doc.pages[prepared_patch[current_patch_page][1]])
                 if current_patch_page < len(prepared_patch) - 1:
                     current_patch_page += 1
             else:
                 output.add_page(page)
+            total_pages += 1
 
         result_filename = original_path.strip(".pdf") + " + " + change_notice_path.split("/")[-1]
         with open(result_filename, "wb") as f:
             output.write(f)
+        return total_pages

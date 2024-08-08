@@ -42,8 +42,8 @@ class ChangesExtractor:
                                 "set_start_page": total_sheets,
                                 "set_position": set_position,
                                 "changes": [],
-                                "has_archive_number": ARCHIVE_MAP[DOC_SIZES_MAP[doc_code.split("-")[-1][:3]]],
-                                "page_size": DOC_SIZES_MAP[doc_code.split("-")[-1][:3]],
+                                "has_archive_number": self._resolve_archive_number(doc_code),
+                                "page_size": self._resolve_page_size(doc_code),
                                 "geometry": {},
                             }
                         extracted_changes = self._extract_changed_sheets(revision, number_of_sheets)
@@ -140,22 +140,44 @@ class ChangesExtractor:
         return pages_list
 
     @staticmethod
+    def _resolve_archive_number(doc_code):
+        doc_letters = doc_code.split("-")[-1][:3]
+        if doc_letters in DOC_SIZES_MAP.keys():
+            return ARCHIVE_MAP[DOC_SIZES_MAP[doc_letters]]
+        else:
+            return False
+
+    @staticmethod
+    def _resolve_page_size(doc_code):
+        doc_letters = doc_code.split("-")[-1][:3]
+        if doc_letters in DOC_SIZES_MAP.keys():
+            return DOC_SIZES_MAP[doc_letters]
+        else:
+            return None
+
+    @staticmethod
     def _fill_geometry(doc_code, changes):
-        doc_letters = doc_code.split("-")[1][:-4].upper().strip("\n")
+        doc_letters = doc_code.split("-")[-1][:3].upper().strip("\n")
         changed_sheets = []
         for change in changes:
             changed_sheets += change["pages"]
         changed_sheets.sort()
-        coordinates = copy(SIZES_COORDINATES[DOC_SIZES_MAP[doc_letters]])
         geometry = []
-        for changed_sheet in changed_sheets:
-            geometry.append((changed_sheet, (
-                coordinates["stamp_x"],
-                coordinates["stamp_y"],
-                coordinates["note_x"],
-                coordinates["note_y"],
-                coordinates["scale"]
-            )))
+        if doc_letters in DOC_SIZES_MAP.keys():
+            coordinates = copy(SIZES_COORDINATES[DOC_SIZES_MAP[doc_letters]])
+            for changed_sheet in changed_sheets:
+                geometry.append((changed_sheet, (
+                    coordinates["stamp_x"],
+                    coordinates["stamp_y"],
+                    coordinates["note_x"],
+                    coordinates["note_y"],
+                    coordinates["scale"]
+                )))
+        else:
+            for changed_sheet in changed_sheets:
+                geometry.append((changed_sheet, (
+                    100, 100, 80, 80, 1
+                )))
         return geometry
 
 

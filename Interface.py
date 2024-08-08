@@ -339,6 +339,7 @@ class Interface:
 
     def _create_title_template(self):
         self.main_manager.create_title_template()
+        messagebox.showinfo("Готово", "Шаблон титула собран и находится в папке с ИИ под названием 'template.docx'")
 
     @staticmethod
     def report_an_error(*args):
