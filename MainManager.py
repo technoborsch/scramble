@@ -432,43 +432,52 @@ class MainManager:
             text += filename + "\n"
         return text
 
-    def _insert_change_notice_pages(self, set_changes, original_path, change_notice_path, set_start_page):
-        output = PdfWriter()  # TODO не работает с новыми, аннулированными страницами
-        original_doc = PdfReader(original_path)  # TODO не работает, когда 2 и более комплектов
-        change_notice_doc = PdfReader(change_notice_path)
-        start_page_index = len(change_notice_doc.pages) - self._count_attachments()
-        prepared_patch = []
-        new_cancelled_correction = 0
-        current_cn_page = start_page_index + set_start_page
+    def _prepare_patch(self, set_changes, change_notice_pages_number, start_ch_page):
+        start_page_index = change_notice_pages_number - self._count_attachments()
+        print(start_page_index)
+        prepared_patch = {}
+
+        current_cn_page = start_ch_page
+        if start_ch_page == 0:
+            current_cn_page = start_page_index
+
+        total_correction = 0
         for doc_info in set_changes.values():
             doc_start_index = int(doc_info["set_start_page"]) - 1
-            for change in doc_info["changes"]:  # if change type == new or == cancelled...
+            for change in doc_info["changes"]:
                 correction = 0
                 if change["change_type"] == "new" or change["change_type"] == "cancel":
                     correction = len(change["pages"])
                 for page in change["pages"]:
-                    prepared_patch.append((doc_start_index + page, current_cn_page, correction))
+                    prepared_patch[doc_start_index + page + total_correction] = current_cn_page
                     current_cn_page += 1
-        current_patch_page = 0
-        current_correction = 0
-        total_pages = 0
-        for i, page in enumerate(original_doc.pages):
-            correction = prepared_patch[current_patch_page][2]
-            if correction:
-                for j in range(0, correction + 1):
-                    output.add_page(change_notice_doc.pages[prepared_patch[current_patch_page][1]])
-                    if current_patch_page < len(prepared_patch) - 1:
-                        current_patch_page += 1
-                current_correction += correction
-            if i == prepared_patch[current_patch_page][0] + current_correction:
-                output.add_page(change_notice_doc.pages[prepared_patch[current_patch_page][1]])
-                if current_patch_page < len(prepared_patch) - 1:
-                    current_patch_page += 1
+                total_correction += correction
+
+        print(prepared_patch)
+        return prepared_patch, current_cn_page
+
+    def _insert_change_notice_pages(self, set_changes, original_path, change_notice_path, cn_start_page):
+        output = PdfWriter()
+        original_doc = PdfReader(original_path)
+        change_notice_doc = PdfReader(change_notice_path)
+
+        set_patch, current_cn_page = self._prepare_patch(set_changes, len(change_notice_doc.pages), cn_start_page)
+
+        i = 0
+        this_cn_page = cn_start_page
+        current_set_page = 0
+        while this_cn_page < len(change_notice_doc.pages) and current_set_page < len(original_doc.pages):
+            if i in set_patch.keys():
+                output.add_page(change_notice_doc.pages[set_patch[i]])
+                this_cn_page += 1
+                current_set_page += 1
+                i += 1
             else:
-                output.add_page(page)
-            total_pages += 1
+                output.add_page(original_doc.pages[current_set_page])
+                current_set_page += 1
+                i += 1
 
         result_filename = original_path.strip(".pdf") + " + " + change_notice_path.split("/")[-1]
         with open(result_filename, "wb") as f:
             output.write(f)
-        return total_pages
+        return current_cn_page

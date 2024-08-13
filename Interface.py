@@ -184,7 +184,7 @@ class Interface:
         self.main_manager.check_directory(messagebox.showerror, messagebox.showinfo)
 
     def _update_pdfs(self):
-        self.main_manager.update_directory_pdfs(self.directory_path_var.get())
+        self.main_manager.update_directory_pdfs(self.directory_path_var.get(), self.changes)
         messagebox.showinfo("Успешно", "Файлы PDF в папке ИИ обновлены")
 
     def _insert_change_notice(self, *args):
@@ -349,7 +349,7 @@ class Interface:
     def on_exit(self):
         self._save_settings()
         self.save_set_changes()
-        self.window.destroy()
+        self.window.quit()
 
     def _set_approved_variable(self):
         code = int(list(self.changes.keys())[0].split(".")[1])
