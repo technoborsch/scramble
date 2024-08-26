@@ -8,13 +8,14 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from StampDrawer import StampDrawer
+from tools import get_latest_change_number
 from config import INITIAL_SIZES
 
 if hasattr(sys, "_MEIPASS"):
     font_path = os.path.join(sys._MEIPASS, r"timesnrcyrmt.ttf")
     nesterov_sign = os.path.join(sys._MEIPASS, r"nesterov_sign.png")
     goncharok_sign = os.path.join(sys._MEIPASS, r"goncharok_sign.png")
-    gnelitskiy_sign = os.path.join(sys._MEIPASS, r"gnelitskiy_sign.png")
+    gnelitskiy_sign = os.path.join(sys._MEIPASS, r"gnelitskiy_sign.png")  # TODO now not actual
 else:
     font_path = r"materials\fonts\timesnrcyrmt.ttf"
     nesterov_sign = r"materials\nesterov_sign.png"
@@ -33,6 +34,7 @@ class Stamper:
         replace_stamp = False
         cancel_stamp = False
         patch_stamps = set()
+        change_number = get_latest_change_number(changes)
         for set_info in changes.values():
             for doc_info in set_info.values():
                 for change in doc_info["changes"]:
@@ -49,20 +51,20 @@ class Stamper:
                             patch_stamps.add(number)
         if new_stamp:
             new_stamp_path = os.path.join(directory_path, "new_stamp.pdf")
-            self.stamp_drawer.draw("new", cn_number, author, cn_date, new_stamp_path)
+            self.stamp_drawer.draw("new", change_number, cn_number, author, cn_date, new_stamp_path)
             self.stamp_paths.append(new_stamp_path)
         if replace_stamp:
             replace_stamp_path = os.path.join(directory_path, "replace_stamp.pdf")
-            self.stamp_drawer.draw("replace", cn_number, author, cn_date, replace_stamp_path)
+            self.stamp_drawer.draw("replace", change_number, cn_number, author, cn_date, replace_stamp_path)
             self.stamp_paths.append(replace_stamp_path)
         if cancel_stamp:
             cancel_stamp_path = os.path.join(directory_path, "cancel_stamp.pdf")
-            self.stamp_drawer.draw("cancel", cn_number, author, cn_date, cancel_stamp_path)
+            self.stamp_drawer.draw("cancel", change_number, cn_number, author, cn_date, cancel_stamp_path)
             self.stamp_paths.append(cancel_stamp_path)
         if patch_stamps:
             for changes_number in patch_stamps:
                 patch_stamp_path = os.path.join(directory_path, f"patch_stamp_{changes_number}.pdf")
-                self.stamp_drawer.draw("patch", cn_number, author, cn_date,
+                self.stamp_drawer.draw("patch", change_number, cn_number, author, cn_date,
                                        patch_stamp_path, number_of_sections=changes_number)
                 self.stamp_paths.append(patch_stamp_path)
 
@@ -204,15 +206,15 @@ class Stamper:
             base_y + y * scale
         )
 
-    def sign_title(self, title_path, author_signature, gnelitskiy=False):
+    def sign_title(self, title_path, author_signature, set_130=False):
         doc = PdfReader(title_path)
         page = doc.pages[0]
-        self._sign(page, author_signature, 0, 0,
-                   self._to_su(21.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)
-        self._sign(page, nesterov_sign, 0, 0,
-                   self._to_su(53.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)
+        # self._sign(page, author_signature, 0, 0,
+        #            self._to_su(21.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)
+        # self._sign(page, nesterov_sign, 0, 0,
+        #            self._to_su(53.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)
         approve_sign = goncharok_sign
-        if gnelitskiy:
+        if set_130:
             approve_sign = gnelitskiy_sign
         self._sign(page, approve_sign, 0, 0,
                    self._to_su(112.5), self._to_su(6), self._to_su(32), self._to_su(12), 1)

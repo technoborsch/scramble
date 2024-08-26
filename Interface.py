@@ -55,6 +55,7 @@ class Interface:
         self.do_archive_notes_var = tk.IntVar(self.window)
         self.do_archive_notes_var.set(1)
 
+        self.full_changes = {}
         self.changes = {}
 
         # Постоянная часть интерфейса - зависит от автора

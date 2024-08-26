@@ -33,7 +33,7 @@ class StampDrawer:
                                        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                                        ('GRID', (0, 0), (-1, -1), self._to_su(0.5), colors.black)])
 
-    def draw(self, stamp_type, ii_number, ii_author, ii_date, destination_path, number_of_sections=None):
+    def draw(self, stamp_type, change_number, ii_number, ii_author, ii_date, destination_path, number_of_sections=None):
         stamp_types = {
             "replace": ("-", "Зам."),
             "new": ("-", "Нов."),
@@ -41,7 +41,7 @@ class StampDrawer:
             "patch": (number_of_sections, "-")
         }
         data = [
-            ["Изм.01", *stamp_types[stamp_type], ii_number, ii_date],
+            [f"Изм.0{change_number}", *stamp_types[stamp_type], ii_number, ii_date],
             ["Изм", "Кол. уч", "Лист", "№ док.", "Дата"],
             ["Rev.", "Q-ty\nof prt.", "Sheet", "Doc. No", "Date"]
         ]
@@ -99,15 +99,3 @@ class StampDrawer:
     @staticmethod
     def _to_su(number):
         return number * 72 / 25.4
-
-
-if __name__ == "__main__":
-    signature = r"materials\signature1.png"
-    drawer = StampDrawer()
-    drawer.draw(
-        "replace",
-        "03885",
-        "Петров\nPetrov",
-        "11.11.2011",
-        signature
-    )

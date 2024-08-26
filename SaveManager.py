@@ -6,6 +6,7 @@ import tkinter as tk
 from datetime import datetime, timedelta
 
 from ChangesExtractor import ChangesExtractor
+from tools import get_latest_changes, update_extracted_changes_with_saved_changes
 
 
 class SaveManager:
@@ -48,15 +49,17 @@ class SaveManager:
         if not settings_exist:
             self._fill_variables(set_settings_path)
         else:
-            decision = message_callback.askyesno(
-                "Пересборка настроек",
-                "Для данного комплекта уже существует файл настроек. Пересобрать изменения комплекта?"
-            )
-            if not decision:
-                self._restore_variables(set_settings_path)
-                self.t.place_set_entries()
-            else:
-                self._fill_variables(set_settings_path)
+            self._restore_variables(set_settings_path)
+            self.t.place_set_entries()
+            # decision = message_callback.askyesno(
+            #     "Пересборка настроек",
+            #     "Для данного комплекта уже существует файл настроек. Пересобрать изменения комплекта?"
+            # )
+            # if not decision:
+            #     self._restore_variables(set_settings_path)
+            #     self.t.place_set_entries()
+            # else:
+            #     self._fill_variables(set_settings_path)
 
     def save_set_settings(self):
         if self.t.directory_path_var.get() and self.t.changes:
@@ -81,7 +84,8 @@ class SaveManager:
                 pickle.dump(saved_info, f)
 
     def _fill_variables(self, path):
-        self.t.changes = self.extractor.extract(self.t.directory_path_var.get())
+        self.t.full_changes = self.extractor.extract(self.t.directory_path_var.get())
+        self.t.changes = get_latest_changes(self.t.full_changes)
         self.t.place_set_entries()
         self.t.change_notice_number_var.set(re.findall(r"\d+", path.split("\\")[-3])[0])
         tomorrow = (datetime.now() + timedelta(1)).strftime("%d.%m.%Y")
@@ -90,8 +94,12 @@ class SaveManager:
 
     def _restore_variables(self, path):
         with open(path, "rb") as f:
-            restored_info = pickle.load(f)
-            self.t.changes = restored_info["changes"]
+            read_info = pickle.load(f)
+            extracted_changes = get_latest_changes(self.extractor.extract(self.t.directory_path_var.get()))
+            read_info["changes"] = update_extracted_changes_with_saved_changes(read_info["changes"], extracted_changes)
+            restored_info = read_info
+            self.t.full_changes = restored_info["changes"]
+            self.t.changes = get_latest_changes(self.t.full_changes)
             self.t.set_name_var.set(restored_info["set_name"])
             self.t.change_notice_number_var.set(restored_info["change_notice_number"])
             self.t.change_notice_date_var.set(restored_info["change_notice_date"])

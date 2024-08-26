@@ -5,6 +5,8 @@ import pprint
 from config import DOC_SIZES_MAP, SIZES_COORDINATES, ARCHIVE_MAP
 from copy import copy
 
+from tools import get_latest_changes
+
 
 class ChangesExtractor:
 
@@ -52,8 +54,7 @@ class ChangesExtractor:
                     total_sheets += int(number_of_sheets)
             for set_code, set_changes in changes.items():
                 changes[set_code] = dict(sorted(set_changes.items(), key=lambda item: int(item[1]["set_position"])))
-            changes = dict(sorted(changes.items(), key=lambda item: item[0]))
-        return changes
+        return dict(sorted(changes.items(), key=lambda item: item[0]))
 
     def _extract_changed_sheets(self, revision, number_of_sheets):
         changes = [change.strip(". ") for change in revision.split("изм")]
@@ -120,7 +121,7 @@ class ChangesExtractor:
         list_of_paths = []
         for filename in os.listdir(folder_path):
             split_filename = filename.split("-")
-            if len(split_filename) > 1 and "MAB" in split_filename[1] and filename.endswith("docx"):
+            if len(split_filename) > 1 and "AB" in split_filename[1][1:] and filename.endswith("docx"):
                 list_of_paths.append(filename)
         return list_of_paths
 

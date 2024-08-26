@@ -3,9 +3,11 @@ import re
 import time
 from datetime import datetime
 
+import patoolib
 from docx2pdf import convert
 from pypdf import PdfReader, PdfWriter
 
+import config
 from ChangeTextCreator import ChangeTextCreator
 from Stamper import Stamper
 from AcadPrinter import AcadPrinter
@@ -93,7 +95,7 @@ class MainManager:
             info_callback,
         )
         date_ = self.t.change_notice_date_var.get()
-        title_path = os.path.join(self.t.directory_path_var.get(), "title.docx")
+        title_path = os.path.join(self.t.directory_path_var.get(), f"ИИ {self.t.change_notice_number_var.get()} титул.docx")
         self.creator.create_title(
             {
                 "change_notice_date": date_,
@@ -103,12 +105,15 @@ class MainManager:
             os.path.join(self.t.directory_path_var.get(), "template.docx"),
             title_path
         )
-        title_pdf_path = os.path.join(self.t.directory_path_var.get(), "title.pdf")
+        title_pdf_path = os.path.join(self.t.directory_path_var.get(), f"ИИ {self.t.change_notice_number_var.get()} титул.pdf")
         convert(title_path, title_pdf_path)
+        gnelitskiy = False
+        if self.t.approved_var.get() == config.APPROVED_LIST[1]:
+            gnelitskiy = True
+        signed_title = self.stamper.sign_title(title_pdf_path, self.t.signature_path_var.get(), set_130=gnelitskiy)
 
-        signed_title = self.stamper.sign_title(title_pdf_path, self.t.signature_path_var.get())
-
-        cn_path = os.path.join(self.t.directory_path_var.get(), f"ИИ {self.t.change_notice_number_var.get()}.pdf")
+        upper_folder_path = "\\".join(self.t.directory_path_var.get().split("\\")[:-1])
+        cn_path = os.path.join(upper_folder_path, f"ИИ {self.t.change_notice_number_var.get()}.pdf")
         output_stream = open(cn_path, "wb")
         merger = PdfWriter()
         merger.append(signed_title)
@@ -116,9 +121,10 @@ class MainManager:
         merger.write(output_stream)
         output_stream.close()
         os.remove(stamped_sheets_pdf_path)
-        os.remove(title_path)
-        os.remove(title_pdf_path)
+        # os.remove(title_path)
+        # os.remove(title_pdf_path)
         self._reduce_pdf_size(cn_path)
+        self._create_originals_archive()
         end_time = time.time()
         text = self._get_output_text(start_time, end_time)
         info_callback("Успешно!", f"{text}")
@@ -276,7 +282,7 @@ class MainManager:
     @staticmethod
     def _compare_file_mod_times(directory_path, file1, file2):
         return os.path.getmtime(os.path.join(directory_path, file1)) \
-               > os.path.getmtime(os.path.join(directory_path, file2))
+            > os.path.getmtime(os.path.join(directory_path, file2))
 
     @staticmethod
     def _get_inconsistency_text(not_in_directory, more_sheets, less_sheets):
@@ -322,9 +328,9 @@ class MainManager:
 
     def _get_author_string(self):
         return self.t.last_name_ru_var.get() + " " + self.t.name_ru_var.get()[0] + "." \
-               + self.t.surname_ru_var.get()[0] \
-               + ". /\n" + self.t.last_name_en_var.get() + " " + self.t.name_en_var.get()[0] + "." \
-               + self.t.surname_en_var.get()[0] + "."
+            + self.t.surname_ru_var.get()[0] \
+            + ". /\n" + self.t.last_name_en_var.get() + " " + self.t.name_en_var.get()[0] + "." \
+            + self.t.surname_en_var.get()[0] + "."
 
     @staticmethod
     def _get_output_text(start_time, end_time):
@@ -389,7 +395,7 @@ class MainManager:
         old_pdfs = []
         for filename in os.listdir(directory_path):
             if (filename.startswith("AKU")
-                    and (filename.endswith(".dwg") or filename.endswith(".docx") or filename.endswith(".xlsx"))
+                    and (filename.endswith(".dwg") or filename.endswith(".docx") or filename.endswith(".xlsx") or filename.endswith(".xls"))
                     and not filename.startswith("title") and not filename.startswith("template")
                     and not filename.startswith("ИИ")):
                 originals.append(filename)
@@ -481,3 +487,24 @@ class MainManager:
         with open(result_filename, "wb") as f:
             output.write(f)
         return current_cn_page
+
+    def _create_originals_archive(self):
+        dir_path = self.t.directory_path_var.get()
+        originals = []
+        for filename in os.listdir(dir_path):
+            if not (filename.endswith(".pdf")
+                    or filename.endswith(".bak")
+                    or filename.endswith(".dwl")
+                    or filename.endswith(".dwl2")
+                    or filename.endswith(".db")
+                    or filename == "config"
+                    or filename == "template.docx"):
+                originals.append(filename)
+        upper_folder_path = "\\".join(dir_path.split("\\")[:-1])
+        archive_path = os.path.join(upper_folder_path, "ИИ " + self.t.change_notice_number_var.get() + ".rar")
+        originals_paths = []
+        for original in originals:
+            originals_paths.append(os.path.join(dir_path, original))
+        if os.path.exists(archive_path):
+            os.remove(archive_path)
+        patoolib.create_archive(archive_path, tuple(originals_paths), verbosity=-1)  # TODO wrong usage
