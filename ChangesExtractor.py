@@ -5,8 +5,6 @@ import pprint
 from config import DOC_SIZES_MAP, SIZES_COORDINATES, ARCHIVE_MAP
 from copy import copy
 
-from tools import get_latest_changes
-
 
 class ChangesExtractor:
 
@@ -27,7 +25,7 @@ class ChangesExtractor:
                     split_revision = revision.split()
                     number_of_sheets = split_revision[0].split("/")[1].split(".")[1]
                     if "изм" in revision:
-                        if set_code not in changes.keys():  # TODO make update changes, not completely remove them
+                        if set_code not in changes.keys():
                             changes[set_code] = {}
                         doc_code = row[0].text.replace("\n", "")
                         if doc_code not in changes[set_code].keys():

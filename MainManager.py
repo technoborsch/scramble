@@ -8,6 +8,7 @@ from docx2pdf import convert
 from pypdf import PdfReader, PdfWriter
 
 import config
+import tools
 from ChangeTextCreator import ChangeTextCreator
 from Stamper import Stamper
 from AcadPrinter import AcadPrinter
@@ -136,6 +137,7 @@ class MainManager:
             map(lambda x: x + "_C0" + getattr(self.t, x + "_rev_var").get(), self.t.changes.keys()))
         change_notice_sets = "\n".join(sets_plus_revisions)
         change_notice_info = {"change_notice_number": self.t.change_notice_number_var.get(),
+                              "change_number": tools.get_latest_change_number(self.t.changes),
                               "change_notice_sets": change_notice_sets,
                               "set_name": self.t.set_name_var.get(),
                               "attachment_sheets_quantity": self._count_attachments(),

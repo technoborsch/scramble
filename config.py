@@ -1,8 +1,8 @@
 ICON_PATH = r"materials\icon.ico"
 
-SECRET = "ODcxNDA4NDY0NTIyMTI1MjI0NzIx"
+SECRET = "ODc5MTk0OTM5NjIyNzI3MjI0NzIx"
 CHAR_OFFSET = "24"
-PROGRAM_VERSION = 0.1
+PROGRAM_VERSION = 0.2
 
 AGREED_LIST = [
     "Алексеев А.В./ Alekseev A.V.",
