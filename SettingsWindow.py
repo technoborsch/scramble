@@ -3,14 +3,14 @@ from tkinter.ttk import Combobox, Checkbutton
 from tkinter import Frame
 from tkscrolledframe import ScrolledFrame
 
+from AdditionalWindow import AdditionalWindow
 from config import SIZES_COORDINATES, DOC_SIZES_MAP
 
 
-class SettingsWindow:
+class SettingsWindow(AdditionalWindow):
 
     def __init__(self, master):
-        self.master = master
-        self.window = tk.Toplevel(master.window)
+        super().__init__(master)
         self.window.title("Настройки комплекта")
         self.sf = ScrolledFrame(self.window, width=1470, height=700)
         self.sf.pack(side="top", expand=1, fill="both")
@@ -34,7 +34,7 @@ class SettingsWindow:
             "Координата\nY\nштампа",
             "Масштаб\nштампа",
             "Архивник",
-        ])
+        ], self.in_f)
         this_row += 1
 
         for set_code, set_documents in self.master.changes.items():
@@ -169,14 +169,6 @@ class SettingsWindow:
                 set_code = split_argument[0]
                 doc_code = split_argument[1]
                 getattr(self, argument).trace("w", self._get_format_trace_function(set_code, doc_code))
-
-    def add_labels_line(self, row, labels):
-        counter = 0
-        for label in labels:
-            attr_name = "label_" + str(row) + "_" + str(counter)
-            setattr(self, attr_name, tk.Label(self.in_f, text=label))
-            getattr(self, attr_name).grid(row=row, column=counter)
-            counter += 1
 
     def add_change_line(self, set_code, document_code, sheet_number, row, column, change, geometry):
         this_column = column
@@ -360,9 +352,6 @@ class SettingsWindow:
                 doc_info["page_size"] = value
         self.master.save_set_changes()
         self.on_exit()
-
-    def on_exit(self):
-        self.window.destroy()
 
     def _get_geometry_trace_function(self, set_code, doc_code, arg_letters, *args):
         def tracer(*args):

@@ -7,6 +7,7 @@ import traceback
 from tkinter import scrolledtext, filedialog, messagebox, simpledialog, INSERT
 
 from SettingsWindow import SettingsWindow
+from PreviousChangeNoticesInfo import PreviousChangeNoticesInfo
 from SaveManager import SaveManager
 from MainManager import MainManager
 import config
@@ -39,6 +40,7 @@ class Interface:
         self.change_notice_date_var = tk.StringVar(self.window)
         self.archive_number_var = tk.StringVar(self.window)
         self.archive_date_var = tk.StringVar(self.window)
+        self.previous_inventory_number_var = tk.StringVar(self.window)
         self.set_name_var = tk.StringVar(self.window)
         self.agreed_var = tk.StringVar(self.window)
         self.checked_var = tk.StringVar(self.window)
@@ -102,7 +104,7 @@ class Interface:
         self.signature_path_label.grid(sticky="W", row=5, column=0, columnspan=3, padx=7)
 
         self.signature_path_entry = tk.Entry(self.window, width=50, justify='right',
-                                             textvariable=self.signature_path_var)
+                                             textvariable=self.signature_path_var, state="readonly")
         self.signature_path_entry.grid(sticky="W", row=6, column=0, columnspan=2, padx=7)
 
         self.signature_path_button = tk.Button(self.window, text="Указать", command=self.get_signature)
@@ -112,7 +114,7 @@ class Interface:
         self.directory_path_label.grid(sticky="W", row=7, column=0, columnspan=3, padx=7)
         # То, что относится к текущей ИИ
         self.directory_path_entry = tk.Entry(self.window, width=50, justify='right',
-                                             textvariable=self.directory_path_var)
+                                             textvariable=self.directory_path_var, state="readonly")
         self.directory_path_entry.grid(sticky="W", row=8, column=0, columnspan=2, padx=7)
 
         self.open_button = tk.Button(self.window, text="Указать", command=self.get_directory_path)
@@ -128,10 +130,13 @@ class Interface:
                                                  textvariable=self.change_notice_date_var)
         self.archive_number_label = tk.Label(self.window, text="Архивный номер комплекта:")
         self.archive_date_label = tk.Label(self.window, text="Дата сдачи в архив:")
+        self.previous_inventory_number_label = tk.Label(self.window, text="Инвентарник прошлой ревизии:")  # TODO отключать если первая ревизия
         self.archive_number_entry = tk.Entry(self.window, width=20, justify='right',
                                                    textvariable=self.archive_number_var)
         self.archive_date_entry = tk.Entry(self.window, width=20, justify='right',
                                                  textvariable=self.archive_date_var)
+        self.previous_inventory_number_entry = tk.Entry(self.window, width=20, justify='right',
+                                           textvariable=self.previous_inventory_number_var)
         self.agreed_label = tk.Label(self.window, text="Согласовано:")
         self.agreed_combobox = ttk.Combobox(self.window, values=config.AGREED_LIST, width=15,
                                             justify='right', textvariable=self.agreed_var)
@@ -164,6 +169,8 @@ class Interface:
         self.do_archive_notes_checkbox = tk.Checkbutton(self.window, text="Проставить архивные\nномера",
                                                         variable=self.do_archive_notes_var)
         self.result_field = tk.scrolledtext.ScrolledText(self.window, width=45, height=8)
+        self.previous_change_notices_info_button = tk.Button(self.window, text="Предыдущие ИИ комплекта",
+                                                             command=self._open_previous_change_notices_window)
         self.settings_button = tk.Button(self.window, text="Настройки комплекта", command=self._open_settings)
 
         self._place_rest_of_interface(self.row_for_interface)
@@ -228,10 +235,12 @@ class Interface:
 
         self.archive_number_label.grid(sticky="W", row=row, column=0, padx=7)
         self.archive_date_label.grid(sticky="W", row=row, column=1, padx=7)
+        self.previous_inventory_number_label.grid(sticky="W", row=row, column=2, padx=7)
         row += 1
 
         self.archive_number_entry.grid(sticky="W", row=row, column=0, padx=7)
         self.archive_date_entry.grid(sticky="W", row=row, column=1, padx=7)
+        self.previous_inventory_number_entry.grid(sticky="W", row=row, column=2, padx=7)
         row += 1
 
         self.agreed_label.grid(sticky="W", row=row, column=0, padx=7)
@@ -271,6 +280,7 @@ class Interface:
         row += 1
         self.result_field.grid(row=row, columnspan=3, padx=7)
         row += 1
+        self.previous_change_notices_info_button.grid(row=row, column=0, pady=10, padx=7)
         self.settings_button.grid(row=row, column=2, pady=10, padx=7)
 
     def _handle_buttons_state(self, *args):
@@ -283,7 +293,7 @@ class Interface:
                 self.settings_button,
                 self.check_consistency_button,
                 self.update_pdfs_button,
-                self.insert_change_notice_button
+                self.insert_change_notice_button,
             ]:
                 button.config(state="normal")
         else:
@@ -293,7 +303,8 @@ class Interface:
                 self.settings_button,
                 self.check_consistency_button,
                 self.update_pdfs_button,
-                self.insert_change_notice_button
+                self.insert_change_notice_button,
+                self.previous_change_notices_info_button
             ]:
                 button.config(state="disabled")
 
@@ -334,6 +345,10 @@ class Interface:
     def _open_settings(self):
         settings_window = SettingsWindow(self)
         self.window.wait_window(settings_window.window)
+
+    def _open_previous_change_notices_window(self):
+        previous_cn_info_window = PreviousChangeNoticesInfo(self)
+        self.window.wait_window(previous_cn_info_window.window)
 
     def _create_change_notice(self):
         self.main_manager.create_change_notice(messagebox.showerror, messagebox.showinfo, messagebox.askyesno)

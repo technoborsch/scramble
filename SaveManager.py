@@ -71,6 +71,7 @@ class SaveManager:
                     "change_notice_date": self.t.change_notice_date_var.get(),
                     "archive_number": self.t.archive_number_var.get(),
                     "archive_date": self.t.archive_date_var.get(),
+                    "previous_inventory_number": self.t.previous_inventory_number_var.get(),
                     "agreed": self.t.agreed_var.get(),
                     "checked": self.t.checked_var.get(),
                     "examined": self.t.examined_var.get(),
@@ -100,17 +101,23 @@ class SaveManager:
             restored_info = read_info
             self.t.full_changes = restored_info["changes"]
             self.t.changes = get_latest_changes(self.t.full_changes)
-            self.t.set_name_var.set(restored_info["set_name"])
-            self.t.change_notice_number_var.set(restored_info["change_notice_number"])
-            self.t.change_notice_date_var.set(restored_info["change_notice_date"])
-            self.t.archive_number_var.set(restored_info["archive_number"])
-            self.t.archive_date_var.set(restored_info["archive_date"])
-            self.t.agreed_var.set(restored_info["agreed"])
-            self.t.checked_var.set(restored_info["checked"])
-            self.t.examined_var.set(restored_info["examined"])
-            self.t.approved_var.set(restored_info["approved"])
-            self.t.estimates_var.set(restored_info["estimates"])
-            self.t.safety_var.set(restored_info["safety"])
+            for parameter in [
+                "set_name",
+                "change_notice_number",
+                "change_notice_date",
+                "archive_number",
+                "archive_date",
+                "previous_inventory_number",
+                "agreed",
+                "checked",
+                "examined",
+                "approved",
+                "estimates",
+                "safety"
+            ]:
+                if parameter in restored_info.keys():
+                    parameter_name = parameter + "_var"
+                    getattr(self.t, parameter_name).set(restored_info[parameter])
             for set_code in self.t.changes.keys():
                 setattr(self.t, set_code + "_rev_var", tk.StringVar())
                 getattr(self.t, set_code + "_rev_var").set(restored_info[set_code + "_rev"])

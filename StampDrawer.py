@@ -34,7 +34,7 @@ class StampDrawer:
                                        ('GRID', (0, 0), (-1, -1), self._to_su(0.5), colors.black)])
 
     def draw(self, stamp_type, change_number, ii_number, ii_author, ii_date, destination_path, number_of_sections=None):
-        stamp_types = {
+        stamp_types = {  # TODO make do multi-change stamps
             "replace": ("-", "Зам."),
             "new": ("-", "Нов."),
             "cancel": ("-", "Анн."),
@@ -87,7 +87,7 @@ class StampDrawer:
     def _draw_line(self, x1, y1, x2, y2):
         self.can.line(self._to_su(x1), self._to_su(y1), self._to_su(x2), self._to_su(y2))
 
-    def _sign(self, image):
+    def _sign(self, image):  # TODO should sign according to number of changes
         self.can.drawImage(image, self._to_su(56), self._to_su(17), self._to_su(7), self._to_su(7),
                            [0, 50, 0, 50, 0, 50])
 
