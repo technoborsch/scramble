@@ -6,6 +6,8 @@ from tkinter import ttk
 import traceback
 from tkinter import scrolledtext, filedialog, messagebox, simpledialog, INSERT
 
+from transliterate import translit
+
 from SettingsWindow import SettingsWindow
 from PreviousChangeNoticesInfo import PreviousChangeNoticesInfo
 from SaveManager import SaveManager
@@ -177,6 +179,9 @@ class Interface:
 
         self.directory_path_var.trace("w", self._handle_buttons_state)
         self.signature_path_var.trace("w", self._handle_buttons_state)
+        self.name_ru_var.trace("w", self._transliterate_name)
+        self.surname_ru_var.trace("w", self._transliterate_surname)
+        self.last_name_ru_var.trace("w", self._transliterate_last_name)
 
         self.window.protocol("WM_DELETE_WINDOW", self.on_exit)
         self.window.bind_all("<Control-KeyPress>", self.keys)
@@ -373,6 +378,15 @@ class Interface:
             self.approved_var.set(config.APPROVED_LIST[0])
         else:
             self.approved_var.set(config.APPROVED_LIST[1])
+
+    def _transliterate_last_name(self, *args):
+        self.last_name_en_var.set(translit(self.last_name_ru_var.get(), "ru", reversed=True))
+
+    def _transliterate_name(self, *args):
+        self.name_en_var.set(translit(self.name_ru_var.get(), "ru", reversed=True))
+
+    def _transliterate_surname(self, *args):
+        self.surname_en_var.set(translit(self.surname_ru_var.get(), "ru", reversed=True))
 
     @staticmethod
     def is_ru_lang_keyboard():
