@@ -283,8 +283,6 @@ class Interface:
         self.directory_path_var.set(path)
         self._restore_set_changes()
         self._set_approved_variable()
-        self._handle_change_number()
-        self._set_change_info_vars()
         self._print_message(self.changes)
 
     def _place_rest_of_interface(self, row):
@@ -456,14 +454,14 @@ class Interface:
                 self.previous_inventory_number_label.config(state="disabled")
                 self.previous_inventory_number_entry.config(state="disabled")
 
-    def _handle_change_number(self):
+    def handle_change_number(self):
         self.change_number = get_latest_change_number(self.changes)
         self.change_number_label.config(text=f"Номер изменения: {self.change_number}")
         if self.change_number > 1:
             self.previous_change_notices_info_button.config(state="normal")
 
-    def _set_change_info_vars(self):
-        for i in range(self.change_number):
+    def set_change_info_vars(self):
+        for i in range(1, self.change_number):
             setattr(self, str(i) + "_last_name_ru_var", tk.StringVar(self.window))
             setattr(self, str(i) + "_last_name_en_var", tk.StringVar(self.window))
             setattr(self, str(i) + "_change_notice_date_var", tk.StringVar(self.window))

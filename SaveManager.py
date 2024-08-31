@@ -79,7 +79,8 @@ class SaveManager:
                     "approved": self.t.approved_var.get(),
                     "estimates": self.t.estimates_var.get(),
                     "safety": self.t.safety_var.get(),
-                    "changes": self.t.full_changes
+                    "changes": self.t.full_changes,
+                    "previous_changes": self.get_previous_changes_info()
                 }
                 for set_code in self.t.full_changes.keys():
                     saved_info[set_code + "_rev"] = getattr(self.t, set_code + "_rev_var").get()
@@ -92,6 +93,9 @@ class SaveManager:
         self.t.change_notice_number_var.set(re.findall(r"\d+", path.split("\\")[-3])[0])
         tomorrow = (datetime.now() + timedelta(1)).strftime("%d.%m.%Y")
         self.t.change_notice_date_var.set(tomorrow)
+        self.t.handle_change_number()
+        self.t.set_change_info_vars()
+
         self.t.ask_for_number_of_changes()
 
     def _restore_variables(self, path):
@@ -123,3 +127,27 @@ class SaveManager:
             for set_code in self.t.changes.keys():
                 setattr(self.t, set_code + "_rev_var", tk.StringVar())
                 getattr(self.t, set_code + "_rev_var").set(restored_info[set_code + "_rev"])
+            self.t.handle_change_number()
+            self.t.set_change_info_vars()
+            if "previous_changes" in original_read_info.keys():
+                for i in range(self.t.change_number - 1, 0, -1):
+                    change = original_read_info["previous_changes"][i]
+                    getattr(self.t, f"{i}_change_notice_number_var").set(change["number"])
+                    getattr(self.t, f"{i}_change_notice_date_var").set(change["date"])
+                    getattr(self.t, f"{i}_last_name_ru_var").set(change["last_name_ru"])
+                    getattr(self.t, f"{i}_last_name_en_var").set(change["last_name_en"])
+
+    def get_previous_changes_info(self):
+        info = {}
+        for i in range(self.t.change_number - 1, 0, -1):
+            number = getattr(self.t, f"{i}_change_notice_number_var").get()
+            date = getattr(self.t, f"{i}_change_notice_date_var").get()
+            last_name_ru = getattr(self.t, f"{i}_last_name_ru_var").get()
+            last_name_en = getattr(self.t, f"{i}_last_name_en_var").get()
+            info[i] = {
+                "number": number,
+                "date": date,
+                "last_name_ru": last_name_ru,
+                "last_name_en": last_name_en
+            }
+        return info
