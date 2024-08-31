@@ -1,7 +1,9 @@
 import sys
 import os
 from docxtpl import DocxTemplate
+
 from ChangesExtractor import ChangesExtractor
+from tools import zip_pages
 
 
 class ChangeTextCreator:
@@ -98,7 +100,7 @@ class ChangeTextCreator:
                                         + " – changes have been made to the document " \
                                           f"«{document_info['doc_eng_name']}»{description_en} (sheet has been replaced);\n"
                     else:
-                        zipped_pages = self._zip_pages(document_info["set_position"], replace_pages)
+                        zipped_pages = zip_pages(document_info["set_position"], replace_pages)
                         russian_text += f"\t- листы {zipped_pages} – внесены изменения в документ " \
                                         f"«{document_info['doc_ru_name']}»{description_ru} (листы заменены);\n"
                         english_text += f"\t- sheets {zipped_pages} – changes have been made to the document " \
@@ -119,7 +121,7 @@ class ChangeTextCreator:
                                         + str(document_info['set_position']) + "." + str(cancel_pages[0]) \
                                         + f" – cancelled{description_en};\n"
                     else:
-                        zipped_pages = self._zip_pages(document_info["set_position"], cancel_pages)
+                        zipped_pages = zip_pages(document_info["set_position"], cancel_pages)
                         russian_text += f"\t- листы {zipped_pages} – листы аннулированы{description_ru};\n"
                         english_text += f"\t- sheets {zipped_pages} – sheets were cancelled{description_en};\n"
 
@@ -141,7 +143,7 @@ class ChangeTextCreator:
                                         + " – a sheet has been added to the document " \
                                           f"«{document_info['doc_eng_name']}»{description_en} (new sheet);\n"
                     else:
-                        zipped_pages = self._zip_pages(document_info["set_position"], new_pages)
+                        zipped_pages = zip_pages(document_info["set_position"], new_pages)
                         russian_text += f"\t- листы {zipped_pages} – добавлены листы в документ " \
                                         f"«{document_info['doc_ru_name']}»{description_ru} (листы новые);\n"
                         english_text += f"\t- sheets {zipped_pages} – sheets were added to the document " \
@@ -150,35 +152,6 @@ class ChangeTextCreator:
             changes_text[set_code + revisions_list[i]] = russian_text.strip(";\n") + "." + "\n\n" + english_text.strip(";\n") + "."
             i += 1
         return changes_text
-
-    @staticmethod
-    def _zip_pages(set_position, pages_list):
-        result = ""
-        zipped_pages = []
-        this_pack = []
-        for i in range(1, len(pages_list)):
-            if not this_pack:
-                if pages_list[i] - pages_list[i - 1] == 1:
-                    this_pack.append(pages_list[i - 1])
-                else:
-                    zipped_pages.append(pages_list[i - 1])
-            elif not pages_list[i] - pages_list[i - 1] == 1:
-                this_pack.append(pages_list[i - 1])
-                zipped_pages.append(this_pack)
-                this_pack = []
-            if i == len(pages_list) - 1:
-                if pages_list[i] - pages_list[i - 1] == 1 and this_pack:
-                    this_pack.append(pages_list[i])
-                    zipped_pages.append(this_pack)
-                    this_pack = []
-                else:
-                    zipped_pages.append(pages_list[i])
-        for item in zipped_pages:
-            if isinstance(item, list):
-                result += str(set_position) + "." + str(item[0]) + "-" + str(set_position) + "." + str(item[1]) + ","
-            else:
-                result += str(set_position) + "." + str(item) + ","
-        return result.strip(",")
 
 
 if __name__ == "__main__":

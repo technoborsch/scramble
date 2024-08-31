@@ -1,4 +1,4 @@
-from copy import copy
+from copy import deepcopy
 
 
 def get_latest_change_number(changes):
@@ -12,7 +12,7 @@ def get_latest_change_number(changes):
 
 
 def get_latest_changes(changes):
-    copied_changes = copy(changes)
+    copied_changes = deepcopy(changes)
     highest_change_number = get_latest_change_number(changes)
     docs_for_deletion = []
     sets_for_deletion = []
@@ -43,7 +43,7 @@ def get_latest_changes(changes):
 
 
 def update_extracted_changes_with_saved_changes(saved_changes, extracted_changes):
-    extracted_changes = copy(extracted_changes)
+    extracted_changes = deepcopy(extracted_changes)
     for set_code, set_info in extracted_changes.items():
         for doc_code, doc_info in set_info.items():
             doc_changes = doc_info["changes"]
@@ -69,3 +69,79 @@ def update_extracted_changes_with_saved_changes(saved_changes, extracted_changes
                 doc_info["has_archive_number"] = doc_saved_info["has_archive_number"]
                 doc_info["page_size"] = doc_saved_info["page_size"]
     return extracted_changes
+
+
+def zip_pages(set_position, pages_list):
+    result = ""
+    zipped_pages = []
+    this_pack = []
+    for i in range(1, len(pages_list)):
+        if not this_pack:
+            if pages_list[i] - pages_list[i - 1] == 1:
+                this_pack.append(pages_list[i - 1])
+            else:
+                zipped_pages.append(pages_list[i - 1])
+        elif not pages_list[i] - pages_list[i - 1] == 1:
+            this_pack.append(pages_list[i - 1])
+            zipped_pages.append(this_pack)
+            this_pack = []
+        if i == len(pages_list) - 1:
+            if pages_list[i] - pages_list[i - 1] == 1 and this_pack:
+                this_pack.append(pages_list[i])
+                zipped_pages.append(this_pack)
+                this_pack = []
+            else:
+                zipped_pages.append(pages_list[i])
+    for item in zipped_pages:
+        if isinstance(item, list):
+            result += str(set_position) + "." + str(item[0]) + "-" + str(set_position) + "." + str(item[1]) + ","
+        else:
+            result += str(set_position) + "." + str(item) + ","
+    if result == "":
+        result = str(set_position) + "." + "1"
+    return result.strip(",")
+
+
+def unzip_page_numbers(pages):
+    pages_list = []
+    for item in pages.split(","):
+        split_item = item.split("-")
+        if len(split_item) == 1:
+            pages_list.append(int(split_item[0].split(".")[1]))
+        elif len(split_item) == 2:
+            first_number = int(split_item[0].split(".")[1])
+            second_number = int(split_item[1].split(".")[1])
+            for i in range(first_number, second_number + 1):
+                pages_list.append(i)
+    return pages_list
+
+
+def chunk_string(string, length):
+    result = []
+    this_index = 0
+    while this_index < len(string):
+        result.append(string[this_index:this_index+length])
+        this_index += length
+    return result
+
+
+def pack_change_info(stamp_string, change_info):
+    this_dict = change_info[int(stamp_string[0])]
+    stamp_type = None
+    sections_number = None
+    if stamp_string[1] == "n":
+        stamp_type = "new"
+    elif stamp_string[1] == "c":
+        stamp_type = "cancel"
+    elif stamp_string[1] == "r":
+        stamp_type = "replace"
+    elif stamp_string[1] == "p":
+        stamp_type = "patch"
+        sections_number = int(stamp_string[2])
+    return {
+        "stamp_type": stamp_type,
+        "ii_number": this_dict["change_notice_number"],
+        "ii_date": this_dict["change_notice_date"],
+        "ii_author": this_dict["author"],
+        "number_of_sections": sections_number
+    }

@@ -1,6 +1,7 @@
 import ctypes
 import os
 import sys
+import re
 import tkinter as tk
 from tkinter import ttk
 import traceback
@@ -12,6 +13,7 @@ from SettingsWindow import SettingsWindow
 from PreviousChangeNoticesInfo import PreviousChangeNoticesInfo
 from SaveManager import SaveManager
 from MainManager import MainManager
+from tools import get_latest_change_number, zip_pages
 import config
 
 
@@ -61,6 +63,9 @@ class Interface:
 
         self.full_changes = {}
         self.changes = {}
+
+        self.first_set = None
+        self.change_number = 1
 
         # Постоянная часть интерфейса - зависит от автора
         self.about_label = tk.Label(self.window, text="Сведения о составителе:")
@@ -124,6 +129,7 @@ class Interface:
         self.main_set_name_label = tk.Label(self.window)
         self.main_set_name_entry = tk.Entry(self.window, width=50, justify='right',
                                             textvariable=self.set_name_var)
+        self.change_number_label = tk.Label(self.window)
         self.change_notice_number_label = tk.Label(self.window, text="Номер ИИ:")
         self.change_notice_date_label = tk.Label(self.window, text="Дата ИИ:")
         self.change_notice_number_entry = tk.Entry(self.window, width=20, justify='right',
@@ -132,7 +138,7 @@ class Interface:
                                                  textvariable=self.change_notice_date_var)
         self.archive_number_label = tk.Label(self.window, text="Архивный номер комплекта:")
         self.archive_date_label = tk.Label(self.window, text="Дата сдачи в архив:")
-        self.previous_inventory_number_label = tk.Label(self.window, text="Инвентарник прошлой ревизии:")  # TODO отключать если первая ревизия
+        self.previous_inventory_number_label = tk.Label(self.window, text="Инвентарник прошлой ревизии:")
         self.archive_number_entry = tk.Entry(self.window, width=20, justify='right',
                                                    textvariable=self.archive_number_var)
         self.archive_date_entry = tk.Entry(self.window, width=20, justify='right',
@@ -170,7 +176,7 @@ class Interface:
                                                 variable=self.do_notes_var)
         self.do_archive_notes_checkbox = tk.Checkbutton(self.window, text="Проставить архивные\nномера",
                                                         variable=self.do_archive_notes_var)
-        self.result_field = tk.scrolledtext.ScrolledText(self.window, width=45, height=8)
+        self.result_field = tk.scrolledtext.ScrolledText(self.window, width=60, height=8)
         self.previous_change_notices_info_button = tk.Button(self.window, text="Предыдущие ИИ комплекта",
                                                              command=self._open_previous_change_notices_window)
         self.settings_button = tk.Button(self.window, text="Настройки комплекта", command=self._open_settings)
@@ -212,14 +218,22 @@ class Interface:
 
     def place_set_entries(self):
         row = self.row_for_interface
-        self.main_set_name_label.grid(sticky="W", row=row, column=0, columnspan=3, padx=7)
+        self.main_set_name_label.grid(sticky="W", row=row, column=0, columnspan=2, padx=7)
         self.main_set_name_label.config(text=f"Название основного комплекта\n {list(self.changes.keys())[0]}:")
+        self.change_number_label.grid(sticky="W", row=row, column=2, padx=7)
         row += 1
         self.main_set_name_entry.grid(sticky="W", row=row, column=0, columnspan=3, padx=7)
         row += 1
+        first_set = True
         for set_code in self.changes.keys():
             if not hasattr(self, set_code + "_rev_var"):
                 setattr(self, set_code + "_rev_var", tk.StringVar())
+            if first_set:
+                first_set_rev = getattr(self, set_code + "_rev_var")
+                self.first_set = first_set_rev
+                self._previous_inventory_entry_handler()
+                first_set_rev.trace("w", self._previous_inventory_entry_handler)
+                first_set = False
             setattr(self, set_code + "_rev_label", tk.Label(self.window,
                                                             text=f"Ревизия комплекта {set_code}:"))
             getattr(self, set_code + "_rev_label").grid(sticky="W", row=row, column=0, columnspan=3, padx=7)
@@ -269,7 +283,9 @@ class Interface:
         self.directory_path_var.set(path)
         self._restore_set_changes()
         self._set_approved_variable()
-        self._print_message(self.changes)  # TODO rework - more info
+        self._handle_change_number()
+        self._set_change_info_vars()
+        self._print_message(self.changes)
 
     def _place_rest_of_interface(self, row):
         self.generate_title_button.grid(row=row, column=0, pady=10)
@@ -313,7 +329,23 @@ class Interface:
             ]:
                 button.config(state="disabled")
 
-    def _print_message(self, text):
+    def _print_message(self, changes):
+        text = ""
+        text += "Файлы *AB прочитаны\n"
+        text += f"Порядковый номер изменения для комплекта: {self.change_number}\n"
+        text += f"Число изменяемых комплектов: {len(self.changes.keys())}\n"
+        text += f"Коды комплектов:\n"
+        for set_code in self.changes.keys():
+            text += f"{set_code}\n"
+        for set_code, set_info in self.changes.items():
+            text += f"В комплекте {set_code}\nменяются документы:\n"
+            for doc_code in set_info.keys():
+                text += f"\t{doc_code}\n"
+            for doc_code, doc_info in set_info.items():
+                text += f"В документ {doc_code}\nвносятся изменения:\n"
+                for change in doc_info["changes"]:
+                    text += f"\tСтр. {zip_pages(doc_info['set_position'], change['pages'])} - " \
+                            f"{config.CHANGE_NAME_MAP[change['change_type']]}\n"
         self.result_field.insert(
             INSERT,
             text
@@ -332,8 +364,12 @@ class Interface:
         self.save_manager.save_set_settings()
 
     def ask_for_number_of_changes(self):
-        for set_, set_documents in self.changes.items():
+        for set_code, set_documents in self.changes.items():
             for document_code, document_info in set_documents.items():
+                previous_changes = None
+                if set_code in self.full_changes.keys():
+                    if document_code in self.full_changes[set_code].keys():
+                        previous_changes = self.full_changes[set_code][document_code]["changes"]
                 for change in document_info["changes"]:
                     if (change["change_type"] == "patch"
                             and "sections_number" in change.keys()
@@ -342,10 +378,28 @@ class Interface:
                         for page in change["pages"]:
                             number = simpledialog.askinteger(
                                 "Число измененных участков",
-                                f"Для документа {document_code}, страница {page}, укажите число изменяемых участков:"
+                                f"Для документа {document_code}, изменение {self.change_number}, страница {page}, "
+                                f"укажите число изменяемых участков:"
                             )
                             sections_number.append((page, number))
                         change["sections_number"] = sections_number
+                    elif previous_changes:
+                        for page in change["pages"]:
+                            for previous_change in previous_changes:
+                                if (not previous_change["change_number"] == self.change_number
+                                        and previous_change["change_type"] == "patch"
+                                        and not previous_change["sections_number"]
+                                        and page in change["pages"]):
+                                    sections_number = []
+                                    for change_page in previous_change["pages"]:
+                                        number = simpledialog.askinteger(
+                                            "Число измененных участков",
+                                            f"Для документа {document_code}, изменение {previous_change['change_number']}, "
+                                            f"страница {change_page}, "
+                                            f"укажите число изменяемых участков:"
+                                        )
+                                        sections_number.append((change_page, number))
+                                    previous_change["sections_number"] = sections_number
 
     def _open_settings(self):
         settings_window = SettingsWindow(self)
@@ -387,6 +441,33 @@ class Interface:
 
     def _transliterate_surname(self, *args):
         self.surname_en_var.set(translit(self.surname_ru_var.get(), "ru", reversed=True))
+
+    def _previous_inventory_entry_handler(self, *args):
+        if self.first_set:
+            first_set_rev_number = re.findall(r"\d*", self.first_set.get())
+            if len(first_set_rev_number) == 2:
+                if int(first_set_rev_number[0]) <= 1:
+                    self.previous_inventory_number_label.config(state="disabled")
+                    self.previous_inventory_number_entry.config(state="disabled")
+                else:
+                    self.previous_inventory_number_label.config(state="normal")
+                    self.previous_inventory_number_entry.config(state="normal")
+            elif len(first_set_rev_number) == 1:
+                self.previous_inventory_number_label.config(state="disabled")
+                self.previous_inventory_number_entry.config(state="disabled")
+
+    def _handle_change_number(self):
+        self.change_number = get_latest_change_number(self.changes)
+        self.change_number_label.config(text=f"Номер изменения: {self.change_number}")
+        if self.change_number > 1:
+            self.previous_change_notices_info_button.config(state="normal")
+
+    def _set_change_info_vars(self):
+        for i in range(self.change_number):
+            setattr(self, str(i) + "_last_name_ru_var", tk.StringVar(self.window))
+            setattr(self, str(i) + "_last_name_en_var", tk.StringVar(self.window))
+            setattr(self, str(i) + "_change_notice_date_var", tk.StringVar(self.window))
+            setattr(self, str(i) + "_change_notice_number_var", tk.StringVar(self.window))
 
     @staticmethod
     def is_ru_lang_keyboard():

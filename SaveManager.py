@@ -4,6 +4,7 @@ import pickle
 import re
 import tkinter as tk
 from datetime import datetime, timedelta
+from copy import deepcopy
 
 from ChangesExtractor import ChangesExtractor
 from tools import get_latest_changes, update_extracted_changes_with_saved_changes
@@ -78,9 +79,9 @@ class SaveManager:
                     "approved": self.t.approved_var.get(),
                     "estimates": self.t.estimates_var.get(),
                     "safety": self.t.safety_var.get(),
-                    "changes": self.t.changes
+                    "changes": self.t.full_changes
                 }
-                for set_code in self.t.changes.keys():
+                for set_code in self.t.full_changes.keys():
                     saved_info[set_code + "_rev"] = getattr(self.t, set_code + "_rev_var").get()
                 pickle.dump(saved_info, f)
 
@@ -95,11 +96,12 @@ class SaveManager:
 
     def _restore_variables(self, path):
         with open(path, "rb") as f:
-            read_info = pickle.load(f)
+            original_read_info = pickle.load(f)
+            read_info = deepcopy(original_read_info)
             extracted_changes = get_latest_changes(self.extractor.extract(self.t.directory_path_var.get()))
             read_info["changes"] = update_extracted_changes_with_saved_changes(read_info["changes"], extracted_changes)
             restored_info = read_info
-            self.t.full_changes = restored_info["changes"]
+            self.t.full_changes = original_read_info["changes"]
             self.t.changes = get_latest_changes(self.t.full_changes)
             for parameter in [
                 "set_name",

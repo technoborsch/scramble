@@ -8,8 +8,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from StampDrawer import StampDrawer
-from tools import get_latest_change_number
 from config import INITIAL_SIZES
+from tools import chunk_string, pack_change_info
 
 if hasattr(sys, "_MEIPASS"):
     font_path = os.path.join(sys._MEIPASS, r"timesnrcyrmt.ttf")
@@ -29,83 +29,62 @@ class Stamper:
         self.stamp_drawer = StampDrawer()
         self.stamp_paths = []
 
-    def create_stamps(self, changes, cn_date, cn_number, author, directory_path):
-        new_stamp = False
-        replace_stamp = False
-        cancel_stamp = False
-        patch_stamps = set()
-        change_number = get_latest_change_number(changes)
-        for set_info in changes.values():
-            for doc_info in set_info.values():
+    def create_stamps(self, changes, full_changes, change_info, directory_path):
+        stamp_ids = set()
+        for set_code, set_info in changes.items():
+            for doc_code, doc_info in set_info.items():
+                previous_changes = None
+                if set_code in full_changes.keys() and doc_code in full_changes[set_code].keys():
+                    previous_changes = full_changes[set_code][doc_code]["changes"]
                 for change in doc_info["changes"]:
-                    change_type = change["change_type"]
-                    if not new_stamp and change_type == "new":
-                        new_stamp = True
-                    if not replace_stamp and change_type == "replace":
-                        replace_stamp = True
-                    if not cancel_stamp and change_type == "cancel":
-                        cancel_stamp = True
-                    if change_type == "patch":
-                        change_numbers = [x[1] for x in change["sections_number"]]
-                        for number in change_numbers:
-                            patch_stamps.add(number)
-        if new_stamp:
-            new_stamp_path = os.path.join(directory_path, "new_stamp.pdf")
-            self.stamp_drawer.draw("new", change_number, cn_number, author, cn_date, new_stamp_path)
-            self.stamp_paths.append(new_stamp_path)
-        if replace_stamp:
-            replace_stamp_path = os.path.join(directory_path, "replace_stamp.pdf")
-            self.stamp_drawer.draw("replace", change_number, cn_number, author, cn_date, replace_stamp_path)
-            self.stamp_paths.append(replace_stamp_path)
-        if cancel_stamp:
-            cancel_stamp_path = os.path.join(directory_path, "cancel_stamp.pdf")
-            self.stamp_drawer.draw("cancel", change_number, cn_number, author, cn_date, cancel_stamp_path)
-            self.stamp_paths.append(cancel_stamp_path)
-        if patch_stamps:
-            for changes_number in patch_stamps:
-                patch_stamp_path = os.path.join(directory_path, f"patch_stamp_{changes_number}.pdf")
-                self.stamp_drawer.draw("patch", change_number, cn_number, author, cn_date,
-                                       patch_stamp_path, number_of_sections=changes_number)
-                self.stamp_paths.append(patch_stamp_path)
+                    this_change_number = change["change_number"]
+                    for page in change["pages"]:
+                        this_stamp_info = [self._get_change_id(change, page)]
+                        if previous_changes:
+                            for previous_change in previous_changes:
+                                if previous_change["change_number"] < this_change_number \
+                                        and page in previous_change["pages"]:
+                                    this_stamp_info.append(self._get_change_id(previous_change, page))
+                        this_id = "".join(sorted(this_stamp_info, reverse=True))
+                        stamp_ids.add(this_id)
+        for stamp_id in stamp_ids:
+            stamp_list = chunk_string(stamp_id, 3)
+            this_change_info = {}
+            for stamp_part in stamp_list:
+                this_change_info[int(stamp_part[0])] = pack_change_info(stamp_part, change_info)
+            stamp_path = os.path.join(directory_path, stamp_id + ".pdf")
+            self.stamp_drawer.draw(this_change_info, stamp_path)
+            self.stamp_paths.append(stamp_path)
 
-    def build_change_notice(self, directory_path, pdf_paths, changes, author_signature,
+    def build_change_notice(self, directory_path, pdf_paths, changes, full_changes, author_signature,
                             output_path, do_stamp, do_note, do_archive_note, archive_number, archive_date):
         for doc_code, pdf_path_list in pdf_paths.items():
             set_code = list(filter(lambda x: doc_code in x[1], changes.items()))[0][0]
             doc_changes = changes[set_code][doc_code]["changes"]
+            previous_changes = None
+            if set_code in full_changes.keys() and doc_code in full_changes[set_code].keys():
+                previous_changes = full_changes[set_code][doc_code]["changes"]
             doc_info = changes[set_code][doc_code]
             geometry = doc_info["geometry"]
             if len(pdf_path_list) == 1:
                 doc = PdfReader(pdf_path_list[0][0])
                 this_doc_page = 0
                 for doc_change in doc_changes:
-                    change_type = doc_change["change_type"]
                     pages = doc_change["pages"]
-                    this_stamp_name = ""
-                    this_section = 0
-                    if change_type == "patch":
-                        this_stamp_name = "patch_stamp_"
-                    elif change_type == "new":
-                        this_stamp_name = "new_stamp"
-                    elif change_type == "replace":
-                        this_stamp_name = "replace_stamp"
-                    elif change_type == "cancel":
-                        this_stamp_name = "cancel_stamp"
                     for page_number in pages:
-                        if change_type == "patch":
-                            sections_number = doc_change["sections_number"]
-                            this_section = list(filter(lambda x: int(x[0]) == page_number, sections_number))[0][1]
+                        # geometry
                         this_geometry = list(filter(lambda x: x[0] == page_number, geometry))[0][1]
                         stamp_x = this_geometry[0]
                         stamp_y = this_geometry[1]
                         note_x = this_geometry[2]
                         note_y = this_geometry[3]
                         scale = this_geometry[4]
-                        if change_type == "patch":
-                            this_stamp_filename = this_stamp_name + str(this_section) + ".pdf"
-                        else:
-                            this_stamp_filename = this_stamp_name + ".pdf"
-                        this_stamp_path = os.path.join(directory_path, this_stamp_filename)
+                        # stamp
+                        this_stamp_path, number_of_changes = self._resolve_stamp(
+                            directory_path, doc_change, page_number, previous_changes
+                        )
+
+                        # stamped page
                         if len(doc.pages) >= int(doc_info["number_of_sheets"]):
                             stamped_page = doc.pages[page_number - 1]
                         else:
@@ -116,10 +95,10 @@ class Stamper:
                             s_x, s_y = self._stamp_page(this_stamp_path, stamped_page, calibration, stamp_x, stamp_y, scale)
 
                             self._sign(stamped_page, author_signature, s_x, s_y,
-                                       self._to_su(50), self._to_su(16), self._to_su(17), self._to_su(8), scale)
+                                       self._to_su(50), self._to_su(16 + 10 * (number_of_changes -1)), self._to_su(17), self._to_su(8), scale)
 
                             self._sign(stamped_page, nesterov_sign, s_x, s_y,
-                                       self._to_su(67), self._to_su(16), self._to_su(17), self._to_su(8), scale)
+                                       self._to_su(67), self._to_su(16 + 10 * (number_of_changes - 1)), self._to_su(17), self._to_su(8), scale)
 
                         if do_note and int(doc_info["set_position"]) != 1:
                             note_text = f"{set_code}/{doc_info['set_position']}.{page_number}"
@@ -185,6 +164,16 @@ class Stamper:
         can.save()
         return PdfReader(packet)
 
+    def _resolve_stamp(self, directory_path, doc_change, page_number, previous_changes):
+        this_change_number = doc_change["change_number"]
+        id_list = [self._get_change_id(doc_change, page_number)]
+        if previous_changes:
+            for change in previous_changes:
+                if change["change_number"] < this_change_number and page_number in change["pages"]:
+                    id_list.append(self._get_change_id(change, page_number))
+        id_string = "".join(sorted(id_list, reverse=True))
+        return os.path.join(directory_path, id_string + ".pdf"), len(id_list)
+
     @staticmethod
     def _sign(page, signature, base_x, base_y, x, y, width, height, scale):
         img_temp = io.BytesIO()
@@ -230,6 +219,22 @@ class Stamper:
     @staticmethod
     def _from_su(number):
         return number * 25.4 / 72
+
+    @staticmethod
+    def _get_change_id(change, page):
+        change_number = change["change_number"]
+        change_type = change["change_type"]
+        if change_type == "new":
+            return f"{change_number}n0"
+        elif change_type == "replace":
+            return f"{change_number}r0"
+        elif change_type == "cancel":
+            return f"{change_number}c0"
+        elif change_type == "patch":
+            number_of_sections = list(filter(lambda x: x[0] == page, change["sections_number"]))[0][1]
+            return f"{change_number}p{number_of_sections}"
+        else:
+            return
 
     def delete_stamps(self):
         for path in self.stamp_paths:

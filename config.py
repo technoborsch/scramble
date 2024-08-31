@@ -139,3 +139,10 @@ PLOT_LIST_MAP = {
     "A2_V": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
     "A1_V": "ISO_full_bleed_A1_(841.00_x_594.00_MM)",
 }
+
+CHANGE_NAME_MAP = {
+    "replace": "Зам.",
+    "patch": "Изм.",
+    "new": "Нов",
+    "cancel": "Анн.",
+}

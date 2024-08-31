@@ -8,7 +8,6 @@ from docx2pdf import convert
 from pypdf import PdfReader, PdfWriter
 
 import config
-import tools
 from ChangeTextCreator import ChangeTextCreator
 from Stamper import Stamper
 from AcadPrinter import AcadPrinter
@@ -35,18 +34,18 @@ class MainManager:
             if check_only:
                 info_callback("OK", "Ошибок не обнаружено")
             else:
-                author = self.t.last_name_ru_var.get() + "\n" + self.t.last_name_en_var.get()
+                change_info = self._get_change_info()
                 self.stamper.create_stamps(
                     self.t.changes,
-                    self.t.change_notice_date_var.get(),
-                    self.t.change_notice_number_var.get(),
-                    author,
+                    self.t.full_changes,
+                    change_info,
                     self.t.directory_path_var.get()
                 )
                 self.stamper.build_change_notice(
                     self.t.directory_path_var.get(),
                     pdf_paths,
                     self.t.changes,
+                    self.t.full_changes,
                     self.t.signature_path_var.get(),
                     result_path,
                     bool(self.t.do_stamps_var.get()),
@@ -125,7 +124,7 @@ class MainManager:
         # os.remove(title_path)
         # os.remove(title_pdf_path)
         self._reduce_pdf_size(cn_path)
-        self._create_originals_archive()
+        # self._create_originals_archive() TODO error
         end_time = time.time()
         text = self._get_output_text(start_time, end_time)
         info_callback("Успешно!", f"{text}")
@@ -137,7 +136,7 @@ class MainManager:
             map(lambda x: x + "_C0" + getattr(self.t, x + "_rev_var").get(), self.t.changes.keys()))
         change_notice_sets = "\n".join(sets_plus_revisions)
         change_notice_info = {"change_notice_number": self.t.change_notice_number_var.get(),
-                              "change_number": tools.get_latest_change_number(self.t.changes),
+                              "cn": self.t.change_number,
                               "change_notice_sets": change_notice_sets,
                               "set_name": self.t.set_name_var.get(),
                               "attachment_sheets_quantity": self._count_attachments(),
@@ -440,9 +439,27 @@ class MainManager:
             text += filename + "\n"
         return text
 
+    def _get_change_info(self):
+        change_info = dict()
+        change_info[self.t.change_number] = {
+            "author": self.t.last_name_ru_var.get() + "\n" + self.t.last_name_en_var.get(),
+            "change_notice_date": self.t.change_notice_date_var.get(),
+            "change_notice_number": self.t.change_notice_number_var.get(),
+        }
+        if self.t.change_number > 1:
+            for number in range(1, self.t.change_number):
+                last_name_ru = getattr(self.t, str(number) + "_last_name_ru_var").get()
+                last_name_en = getattr(self.t, str(number) + "_last_name_en_var").get()
+                author = last_name_ru + "\n" + last_name_en
+                change_info[number] = {
+                    "author": author,
+                    "change_notice_date": getattr(self.t, str(number) + "_change_notice_date_var").get(),
+                    "change_notice_number": getattr(self.t, str(number) + "_change_notice_number_var").get()
+                }
+        return change_info
+
     def _prepare_patch(self, set_changes, change_notice_pages_number, start_ch_page):
         start_page_index = change_notice_pages_number - self._count_attachments()
-        print(start_page_index)
         prepared_patch = {}
 
         current_cn_page = start_ch_page
@@ -461,7 +478,6 @@ class MainManager:
                     current_cn_page += 1
                 total_correction += correction
 
-        print(prepared_patch)
         return prepared_patch, current_cn_page
 
     def _insert_change_notice_pages(self, set_changes, original_path, change_notice_path, cn_start_page):

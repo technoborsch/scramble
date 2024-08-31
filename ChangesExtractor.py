@@ -1,9 +1,10 @@
 import os
 import docx
 import pprint
+from copy import copy
 
 from config import DOC_SIZES_MAP, SIZES_COORDINATES, ARCHIVE_MAP
-from copy import copy
+from tools import unzip_page_numbers
 
 
 class ChangesExtractor:
@@ -76,7 +77,7 @@ class ChangesExtractor:
                 if item:
                     pages, type_ = item.split("(")
                     if pages:
-                        pages = self._unzip_page_numbers(pages.strip(", "))
+                        pages = unzip_page_numbers(pages.strip(", "))
                     else:
                         pages = [num + 1 for num in range(0, int(number_of_sheets))]
                     if "зам" in type_:
@@ -122,21 +123,6 @@ class ChangesExtractor:
             if len(split_filename) > 1 and "AB" in split_filename[1][1:] and filename.endswith("docx"):
                 list_of_paths.append(filename)
         return list_of_paths
-
-    @staticmethod
-    def _unzip_page_numbers(pages):
-        pages_list = []
-        for item in pages.split(","):
-            split_item = item.split("-")
-            if len(split_item) == 1:
-                print(split_item)
-                pages_list.append(int(split_item[0].split(".")[1]))
-            elif len(split_item) == 2:
-                first_number = int(split_item[0].split(".")[1])
-                second_number = int(split_item[1].split(".")[1])
-                for i in range(first_number, second_number + 1):
-                    pages_list.append(i)
-        return pages_list
 
     @staticmethod
     def _resolve_archive_number(doc_code):
