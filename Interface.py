@@ -22,8 +22,10 @@ class Interface:
     def __init__(self):
         self.window = tk.Tk()
         self.window.report_callback_exception = self.report_an_error
+        self.help_path = os.path.join(os.getcwd(), "materials", "Инструкция.pdf")
         if hasattr(sys, "_MEIPASS"):
             self.window.iconbitmap(os.path.join(sys._MEIPASS, r"icon.ico"))
+            self.help_path = os.path.join(sys._MEIPASS, r"Инструкция.pdf")
         else:
             self.window.iconbitmap(r"materials\icon.ico")
         self.window.title(f"ИИшница v.{str(config.PROGRAM_VERSION)}")
@@ -140,11 +142,11 @@ class Interface:
         self.archive_date_label = tk.Label(self.window, text="Дата сдачи в архив:")
         self.previous_inventory_number_label = tk.Label(self.window, text="Инвентарник прошлой ревизии:")
         self.archive_number_entry = tk.Entry(self.window, width=20, justify='right',
-                                                   textvariable=self.archive_number_var)
+                                             textvariable=self.archive_number_var)
         self.archive_date_entry = tk.Entry(self.window, width=20, justify='right',
-                                                 textvariable=self.archive_date_var)
+                                           textvariable=self.archive_date_var)
         self.previous_inventory_number_entry = tk.Entry(self.window, width=20, justify='right',
-                                           textvariable=self.previous_inventory_number_var)
+                                                        textvariable=self.previous_inventory_number_var)
         self.agreed_label = tk.Label(self.window, text="Согласовано:")
         self.agreed_combobox = ttk.Combobox(self.window, values=config.AGREED_LIST, width=15,
                                             justify='right', textvariable=self.agreed_var)
@@ -153,11 +155,11 @@ class Interface:
                                              justify='right', textvariable=self.checked_var)
         self.examined_label = tk.Label(self.window, text="Нормоконтроль:")
         self.examined_combobox = ttk.Combobox(self.window, values=config.EXAMINED_LIST, width=15,
-                                             justify='right', textvariable=self.examined_var)
+                                              justify='right', textvariable=self.examined_var)
         self.estimates_checkbox = tk.Checkbutton(self.window, text="Влияет на смету",
                                                  variable=self.estimates_var)
         self.safety_checkbox = tk.Checkbutton(self.window, text="Влияет на безопасность",
-                                                 variable=self.safety_var)
+                                              variable=self.safety_var)
         # Плавающая нижняя часть интерфейса
         self.generate_title_button = tk.Button(self.window, text="Собрать титул", command=self._create_title_template,
                                                state='disabled')
@@ -179,6 +181,7 @@ class Interface:
         self.result_field = tk.scrolledtext.ScrolledText(self.window, width=60, height=8)
         self.previous_change_notices_info_button = tk.Button(self.window, text="Предыдущие ИИ комплекта",
                                                              command=self._open_previous_change_notices_window)
+        self.help_button = tk.Button(self.window, text="Инструкция", bg="grey", command=self._open_help)
         self.settings_button = tk.Button(self.window, text="Настройки комплекта", command=self._open_settings)
 
         self._place_rest_of_interface(self.row_for_interface)
@@ -300,6 +303,7 @@ class Interface:
         self.result_field.grid(row=row, columnspan=3, padx=7)
         row += 1
         self.previous_change_notices_info_button.grid(row=row, column=0, pady=10, padx=7)
+        self.help_button.grid(row=row, column=1, pady=10, padx=7)
         self.settings_button.grid(row=row, column=2, pady=10, padx=7)
 
     def _handle_buttons_state(self, *args):
@@ -486,5 +490,12 @@ class Interface:
             if event.keycode == 65:
                 event.widget.event_generate("<<SelectAll>>")
 
+    def _open_help(self):
+        os.startfile(self.help_path)
+
     def run(self):
         self.window.mainloop()
+
+
+if __name__ == "__main__":
+    os.startfile(r"C:\Users\DNS\PycharmProjects\scramble\materials\folder\10UBB10QKJ01B-MTB0001_ИИ-25.pdf")

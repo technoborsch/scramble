@@ -95,7 +95,8 @@ class MainManager:
             info_callback,
         )
         date_ = self.t.change_notice_date_var.get()
-        title_path = os.path.join(self.t.directory_path_var.get(), f"ИИ {self.t.change_notice_number_var.get()} титул.docx")
+        title_path = os.path.join(self.t.directory_path_var.get(),
+                                  f"ИИ {self.t.change_notice_number_var.get()} титул.docx")
         self.creator.create_title(
             {
                 "change_notice_date": date_,
@@ -105,7 +106,8 @@ class MainManager:
             os.path.join(self.t.directory_path_var.get(), "template.docx"),
             title_path
         )
-        title_pdf_path = os.path.join(self.t.directory_path_var.get(), f"ИИ {self.t.change_notice_number_var.get()} титул.pdf")
+        title_pdf_path = os.path.join(self.t.directory_path_var.get(),
+                                      f"ИИ {self.t.change_notice_number_var.get()} титул.pdf")
         convert(title_path, title_pdf_path)
         gnelitskiy = False
         if self.t.approved_var.get() == config.APPROVED_LIST[1]:
@@ -256,15 +258,16 @@ class MainManager:
         for dwg_file in dwg_paths:
             filename = dwg_file.replace(".dwg", "")
             pdf = [x for x in pdf_paths if x.startswith(filename)]
+            page_size = self._get_doc_size(filename)
             if len(pdf) == 1 and self._compare_file_mod_times(directory_path, dwg_file, pdf[0]):
                 output_path = pdf[0]
                 self.acad_printer.convert(os.path.join(directory_path, dwg_file),
-                                          os.path.join(directory_path, output_path))
+                                          os.path.join(directory_path, output_path), page_size)
             elif len(pdf) < 1:
                 output_path = filename + ".pdf"
                 self.acad_printer.convert(os.path.join(directory_path, dwg_file),
-                                          os.path.join(directory_path, output_path))
-
+                                          os.path.join(directory_path, output_path), page_size)
+        self.word_printer.close()
         self.excel_printer.close()
         self.acad_printer.close_acad()
 
@@ -283,7 +286,7 @@ class MainManager:
     @staticmethod
     def _compare_file_mod_times(directory_path, file1, file2):
         return os.path.getmtime(os.path.join(directory_path, file1)) \
-            > os.path.getmtime(os.path.join(directory_path, file2))
+               > os.path.getmtime(os.path.join(directory_path, file2))
 
     @staticmethod
     def _get_inconsistency_text(not_in_directory, more_sheets, less_sheets):
@@ -329,9 +332,9 @@ class MainManager:
 
     def _get_author_string(self):
         return self.t.last_name_ru_var.get() + " " + self.t.name_ru_var.get()[0] + "." \
-            + self.t.surname_ru_var.get()[0] \
-            + ". /\n" + self.t.last_name_en_var.get() + " " + self.t.name_en_var.get()[0] + "." \
-            + self.t.surname_en_var.get()[0] + "."
+               + self.t.surname_ru_var.get()[0] \
+               + ". /\n" + self.t.last_name_en_var.get() + " " + self.t.name_en_var.get()[0] + "." \
+               + self.t.surname_en_var.get()[0] + "."
 
     @staticmethod
     def _get_output_text(start_time, end_time):
@@ -396,7 +399,8 @@ class MainManager:
         old_pdfs = []
         for filename in os.listdir(directory_path):
             if (filename.startswith("AKU")
-                    and (filename.endswith(".dwg") or filename.endswith(".docx") or filename.endswith(".xlsx") or filename.endswith(".xls"))
+                    and (filename.endswith(".dwg") or filename.endswith(".docx") or filename.endswith(
+                        ".xlsx") or filename.endswith(".xls"))
                     and not filename.startswith("title") and not filename.startswith("template")
                     and not filename.startswith("ИИ")):
                 originals.append(filename)
@@ -526,3 +530,13 @@ class MainManager:
         if os.path.exists(archive_path):
             os.remove(archive_path)
         patoolib.create_archive(archive_path, tuple(originals_paths), verbosity=-1)  # TODO wrong usage
+
+    def _get_doc_size(self, filename):
+        doc_size = None
+        for set_code, set_info in self.t.changes.items():
+            for doc_code, doc_info in set_info.items():
+                if doc_code in filename:
+                    doc_size = doc_info["page_size"]
+                    break
+            break
+        return doc_size
