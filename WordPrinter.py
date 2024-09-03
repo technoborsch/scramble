@@ -12,7 +12,7 @@ class WordPrinter:
         doc = self.app.Documents.Open(doc_path)
         output_path = doc_path.replace(".docx", "").replace(".doc", "") + ".pdf"
         doc.SaveAs(output_path, FileFormat=17)
-        # TODO bug somewhere here (word errors)
+        doc.Close()
 
     def close(self):
         self.app = None

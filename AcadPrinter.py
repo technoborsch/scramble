@@ -1,14 +1,29 @@
+import os
+import sys
+from time import sleep
+from copy import deepcopy
+
 import pyautocad
 from pyautocad import Autocad
-from time import sleep
+
 
 import config
+
+
+plot_config_path = os.path.join(os.getcwd(), r"materials\printer_config")
+plot_printer_desc_path = os.path.join(os.getcwd(), r"materials\printer_config\PMP Files")
+plot_styles_path = os.path.join(os.getcwd(), r"materials\printer_config\Plot Styles")
+if hasattr(sys, "_MEIPASS"):
+    plot_config_path = os.path.join(sys._MEIPASS, r"printer_config")
+    plot_printer_desc_path = os.path.join(sys._MEIPASS, r"printer_config\PMP Files")
+    plot_styles_path = os.path.join(sys._MEIPASS, r"printer_config\Plot Styles")
 
 
 class AcadPrinter:
 
     def __init__(self):
         self.acad = None
+        self.original_printer_config_path = None
         self._setup()
 
     def convert(self, dwg_path, output_path, doc_size):
@@ -19,18 +34,18 @@ class AcadPrinter:
         dwg = self.acad.ActiveDocument
         plot = dwg.Plot
         this_config = dwg.ActiveLayout
-        if not this_config.ConfigName == "DWG To PDF.pc3":
-            this_config.ConfigName = "DWG To PDF.pc3"
-            this_config.UseStandardScale = False
-            this_config.StandardScale = pyautocad.ACAD.acScaleToFit
-            this_config.PlotRotation = pyautocad.ACAD.ac0degrees
-            this_config.PlotType = pyautocad.ACAD.acExtents
+        this_config.RefreshPlotDeviceInfo()
 
-            this_config.RefreshPlotDeviceInfo()
-            this_config.CanonicalMediaName = config.PLOT_LIST_MAP[doc_size]
-            this_config.CenterPlot = True
-            this_config.PlotWithPlotStyles = True
-            this_config.StyleSheet = "monochrome.ctb"
+        this_config.ConfigName = "DWG To PDF.pc3"
+        this_config.UseStandardScale = False
+        this_config.StandardScale = pyautocad.ACAD.acScaleToFit
+        this_config.PlotRotation = pyautocad.ACAD.ac0degrees
+        this_config.PlotType = pyautocad.ACAD.acExtents
+        this_config.RefreshPlotDeviceInfo()
+        this_config.CanonicalMediaName = config.PLOT_LIST_MAP[doc_size]
+        this_config.CenterPlot = True
+        this_config.PlotWithPlotStyles = True
+        this_config.StyleSheet = "akku-standard.ctb"
 
         dwg.SetVariable("BACKGROUNDPLOT", 0)
 
@@ -43,6 +58,9 @@ class AcadPrinter:
         return result
 
     def close_acad(self):
+        self.acad.Application.Preferences.Files.PrinterConfigPath = self.original_printer_config_path
+        self.acad.Application.Preferences.Files.PrinterDescPath = self.original_print_desc_path
+        self.acad.Application.Preferences.Files.PrinterStyleSheetPath = self.original_print_styles_path
         if self.acad.Application.Documents.Count != 0:
             for doc in self.acad.Application.Documents:
                 doc.Close(False)
@@ -50,3 +68,17 @@ class AcadPrinter:
 
     def _setup(self):
         self.acad = Autocad(True, False)
+        self.original_printer_config_path = deepcopy(self.acad.Application.Preferences.Files.PrinterConfigPath)
+        self.original_print_desc_path = deepcopy(self.acad.Application.Preferences.Files.PrinterDescPath)
+        self.original_print_styles_path = deepcopy(self.acad.Application.Preferences.Files.PrinterStyleSheetPath)
+        self.acad.Application.Preferences.Files.PrinterConfigPath = plot_config_path
+        self.acad.Application.Preferences.Files.PrinterDescPath = plot_printer_desc_path
+        self.acad.Application.Preferences.Files.PrinterStyleSheetPath = plot_styles_path
+
+
+if __name__ == "__main__":
+    app = Autocad(True, False)
+    sleep(3)
+    print(app.Application.Preferences.Files.PrinterConfigPath)
+    print(app.Application.Preferences.Files.PrinterDescPath)
+    print(app.Application.Preferences.Files.PrinterStyleSheetPath)
