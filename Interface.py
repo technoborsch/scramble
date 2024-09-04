@@ -286,6 +286,10 @@ class Interface:
         self.directory_path_var.set(path)
         self._restore_set_changes()
         self._set_approved_variable()
+        try:
+            self.main_manager.get_journal_info()
+        except Exception:
+            pass
         self._print_message(self.changes)
 
     def _place_rest_of_interface(self, row):
@@ -470,6 +474,16 @@ class Interface:
             setattr(self, str(i) + "_last_name_en_var", tk.StringVar(self.window))
             setattr(self, str(i) + "_change_notice_date_var", tk.StringVar(self.window))
             setattr(self, str(i) + "_change_notice_number_var", tk.StringVar(self.window))
+            last_name_ru_var = getattr(self, f"{i}_last_name_ru_var")
+            last_name_en_var = getattr(self, f"{i}_last_name_en_var")
+            last_name_ru_var.trace("w", self.get_transliterate_function(last_name_ru_var, last_name_en_var))
+
+    @staticmethod
+    def get_transliterate_function(last_name_ru_var, last_name_en_var):
+        def tracer(*args):
+            last_name_en_var.set(translit(last_name_ru_var.get(), "ru", reversed=True))
+        return tracer
+
 
     @staticmethod
     def is_ru_lang_keyboard():

@@ -146,3 +146,5 @@ CHANGE_NAME_MAP = {
     "new": "Нов",
     "cancel": "Анн.",
 }
+
+JOURNAL_ADDRESS = r"D:\Журнал регистрации ИИ_тест.xlsx"

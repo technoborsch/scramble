@@ -13,6 +13,7 @@ from Stamper import Stamper
 from AcadPrinter import AcadPrinter
 from ExcelPrinter import ExcelPrinter
 from WordPrinter import WordPrinter
+from JournalHandler import JournalHandler
 
 
 class MainManager:
@@ -21,6 +22,7 @@ class MainManager:
         self.t = target
         self.creator = ChangeTextCreator()
         self.stamper = Stamper()
+        self.journal = JournalHandler()
         self.excel_printer = ExcelPrinter()
         self.word_printer = WordPrinter()
         self.acad_printer = AcadPrinter()
@@ -540,3 +542,16 @@ class MainManager:
                     break
             break
         return doc_size
+
+    def get_journal_info(self):
+        change_notice_number = int(self.t.change_notice_number_var.get())
+        if change_notice_number:
+            info, row = self.journal.get_change_notice_info(change_notice_number)
+            if info:
+                self.t.estimates_var.set(int(info["estimates"]))
+                if int(info["change_number"]) > 1:
+                    previous_list = self.journal.get_previous_change_notices_info(info["full_set_code"], row)
+                    for i, change_info in enumerate(previous_list):
+                        getattr(self.t, f"{i + 1}_last_name_ru_var").set(change_info["last_author"])
+                        getattr(self.t, f"{i + 1}_change_notice_date_var").set(change_info["release_date"].strftime("%d.%m.%Y"))
+                        getattr(self.t, f"{i + 1}_change_notice_number_var").set(change_info["change_notice_number"])

@@ -1,7 +1,5 @@
 import tkinter as tk
 
-from transliterate import translit
-
 from AdditionalWindow import AdditionalWindow
 
 
@@ -61,18 +59,7 @@ class PreviousChangeNoticesInfo(AdditionalWindow):
         self.ok_button = tk.Button(self.window, text="OK", command=self.save_info)
         self.ok_button.grid(sticky="E", row=this_row, column=0, padx=7, pady=7)
 
-        for i in range(self.master.change_number - 1, 0, -1):
-            last_name_ru_var = getattr(self.master, f"{i}_last_name_ru_var")
-            last_name_en_var = getattr(self.master, f"{i}_last_name_en_var")
-            last_name_ru_var.trace("w", self.get_transliterate_function(last_name_ru_var, last_name_en_var))
-
     def save_info(self):
         self.on_exit()
-
-    @staticmethod
-    def get_transliterate_function(last_name_ru_var, last_name_en_var):
-        def tracer(*args):
-            last_name_en_var.set(translit(last_name_ru_var.get(), "ru", reversed=True))
-        return tracer
 
     # TODO complete
