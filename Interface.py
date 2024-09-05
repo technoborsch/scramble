@@ -128,6 +128,7 @@ class Interface:
 
         self.open_button = tk.Button(self.window, text="Указать", command=self.get_directory_path)
         self.open_button.grid(sticky="S", row=8, column=2)
+        self.refresh_journal_button = tk.Button(self.window, text="Обновить данные из журнала", command=self.refresh_journal_info)
         self.main_set_name_label = tk.Label(self.window)
         self.main_set_name_entry = tk.Entry(self.window, width=50, justify='right',
                                             textvariable=self.set_name_var)
@@ -221,6 +222,8 @@ class Interface:
 
     def place_set_entries(self):
         row = self.row_for_interface
+        self.refresh_journal_button.grid(sticky="W", row=row, column=2, padx=7)
+        row += 1
         self.main_set_name_label.grid(sticky="W", row=row, column=0, columnspan=2, padx=7)
         self.main_set_name_label.config(text=f"Название основного комплекта\n {list(self.changes.keys())[0]}:")
         self.change_number_label.grid(sticky="W", row=row, column=2, padx=7)
@@ -286,10 +289,6 @@ class Interface:
         self.directory_path_var.set(path)
         self._restore_set_changes()
         self._set_approved_variable()
-        try:
-            self.main_manager.get_journal_info()
-        except Exception:
-            pass
         self._print_message(self.changes)
 
     def _place_rest_of_interface(self, row):
@@ -484,6 +483,11 @@ class Interface:
             last_name_en_var.set(translit(last_name_ru_var.get(), "ru", reversed=True))
         return tracer
 
+    def refresh_journal_info(self):
+        try:
+            self.main_manager.get_journal_info()
+        except Exception:
+            messagebox.showerror("Что-то пошло не так", "Не удалось обновить информацию из журнала")
 
     @staticmethod
     def is_ru_lang_keyboard():

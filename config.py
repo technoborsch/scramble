@@ -147,4 +147,4 @@ CHANGE_NAME_MAP = {
     "cancel": "Анн.",
 }
 
-JOURNAL_ADDRESS = r"D:\Журнал регистрации ИИ_тест.xlsx"
+JOURNAL_ADDRESS = r"C:\Users\n.nikiforov\Documents\Тестовые ИИ\Журнал регистрации ИИ.xlsx"

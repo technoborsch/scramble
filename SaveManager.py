@@ -49,6 +49,7 @@ class SaveManager:
         settings_exist = os.path.exists(set_settings_path)
         if not settings_exist:
             self._fill_variables(set_settings_path)
+            self.t.refresh_journal_info()
         else:
             self._restore_variables(set_settings_path)
             self.t.place_set_entries()
