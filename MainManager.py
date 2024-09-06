@@ -54,7 +54,8 @@ class MainManager:
                     bool(self.t.do_notes_var.get()),
                     bool(self.t.do_archive_notes_var.get()),
                     self.t.archive_number_var.get(),
-                    self.t.archive_date_var.get()
+                    self.t.archive_date_var.get(),
+                    self.t.previous_inventory_number_var.get()
                 )
                 self.stamper.delete_stamps()
         else:

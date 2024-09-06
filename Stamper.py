@@ -57,7 +57,8 @@ class Stamper:
             self.stamp_paths.append(stamp_path)
 
     def build_change_notice(self, directory_path, pdf_paths, changes, full_changes, author_signature,
-                            output_path, do_stamp, do_note, do_archive_note, archive_number, archive_date):
+                            output_path, do_stamp, do_note, do_archive_note,
+                            archive_number, archive_date, previous_set):
         for doc_code, pdf_path_list in pdf_paths.items():
             set_code = list(filter(lambda x: doc_code in x[1], changes.items()))[0][0]
             doc_changes = changes[set_code][doc_code]["changes"]
@@ -104,7 +105,7 @@ class Stamper:
                             note_text = f"{set_code}/{doc_info['set_position']}.{page_number}"
                             self._add_note(stamped_page, note_text, 3.5, note_x, note_y)  # TODO different sizes for notes
                         if do_archive_note and bool(doc_info["has_archive_number"]):
-                            self._add_archive_note(stamped_page, archive_number, archive_date)  # TODO иногда плохо расставляет, нужно добавить логику с "Номером пакета" в файлах MDB
+                            self._add_archive_note(stamped_page, archive_number, archive_date, previous_set)  # TODO иногда плохо расставляет, нужно добавить логику с "Номером пакета" в файлах MDB
                         if len(doc.pages) >= int(doc_info["number_of_sheets"]):
                             self.output.add_page(doc.pages[page_number - 1])
                         else:
@@ -140,13 +141,16 @@ class Stamper:
             self._to_su(y),
         )
 
-    def _add_archive_note(self, stamped_page, number, date):
+    def _add_archive_note(self, stamped_page, number, date, previous_number):
         number_page = self._make_note(number, self._to_su(2)).pages[0].rotate(270)
         number_page.transfer_rotation_to_content()
         date_page = self._make_note(date, self._to_su(2)).pages[0].rotate(270)
         date_page.transfer_rotation_to_content()
+        previous_number_page = self._make_note(previous_number, self._to_su(2)).pages[0].rotate(270)
+        previous_number_page.transfer_rotation_to_content()
         stamped_page.merge_translated_page(number_page, self._to_su(9), self._to_su(9))
         stamped_page.merge_translated_page(date_page, self._to_su(9), self._to_su(35))
+        stamped_page.merge_translated_page(previous_number_page, self._to_su(9), self._to_su(66))
 
     def _get_calibration(self, stamped_page, page_size):
         intended_height = self._to_su(INITIAL_SIZES[page_size]["height"])
