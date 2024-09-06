@@ -127,7 +127,8 @@ class SaveManager:
                     getattr(self.t, parameter_name).set(restored_info[parameter])
             for set_code in self.t.changes.keys():
                 setattr(self.t, set_code + "_rev_var", tk.StringVar())
-                getattr(self.t, set_code + "_rev_var").set(restored_info[set_code + "_rev"])
+                if set_code + "_rev" in restored_info.keys():
+                    getattr(self.t, set_code + "_rev_var").set(restored_info[set_code + "_rev"])
             self.t.handle_change_number()
             self.t.set_change_info_vars()
             if "previous_changes" in original_read_info.keys():

@@ -48,7 +48,10 @@ class SettingsWindow(AdditionalWindow):
                 getattr(self, doc_code_label).grid(row=this_row, column=1)
 
                 doc_format_var = set_code + "%" + doc_code + "%format_var"
-                setattr(self, doc_format_var, tk.StringVar(self.in_f, value=doc_info["page_size"]))
+                doc_format_value = ""
+                if "page_size" in doc_info.keys():
+                    doc_format_value = doc_info["page_size"]
+                setattr(self, doc_format_var, tk.StringVar(self.in_f, value=doc_format_value))
                 doc_format_combobox = set_code + "%" + doc_code + "%format_combobox"
                 setattr(self, doc_format_combobox, Combobox(self.in_f, values=list(SIZES_COORDINATES.keys()),
                                                             textvariable=getattr(self, doc_format_var)))
@@ -119,9 +122,12 @@ class SettingsWindow(AdditionalWindow):
                                  textvariable=getattr(self, doc_scale_id + "%" + "var")))
                 getattr(self, doc_scale_id + "%" + "entry").grid(sticky="W", row=this_row, column=12, padx=7)
 
-                do_archive_note_var = doc_code + "%do_archive_note_var"
-                setattr(self, do_archive_note_var, tk.IntVar(self.in_f, value=int(doc_info["has_archive_number"])))
-                do_archive_note_check = doc_code + "%do_archive_note_check"
+                do_archive_note_var = set_code + "%" + doc_code + "%do_archive_note_var"
+                do_archive_note_value = False
+                if "has_archive_number" in doc_info.keys():
+                    do_archive_note_value = doc_info["has_archive_number"]
+                setattr(self, do_archive_note_var, tk.IntVar(self.in_f, value=int(do_archive_note_value)))
+                do_archive_note_check = set_code + doc_code + "%do_archive_note_check"
                 setattr(self, do_archive_note_check,
                         Checkbutton(self.in_f, variable=getattr(self, do_archive_note_var)))
                 getattr(self, do_archive_note_check).grid(row=this_row, column=13)
@@ -163,7 +169,8 @@ class SettingsWindow(AdditionalWindow):
                     split_argument = argument.split("%")
                     set_code = split_argument[0]
                     doc_code = split_argument[1]
-                    getattr(self, argument).trace("w", self._get_geometry_trace_function(set_code, doc_code, arg_letters))
+                    getattr(self, argument).trace("w",
+                                                  self._get_geometry_trace_function(set_code, doc_code, arg_letters))
             if argument.endswith("%format_var"):
                 split_argument = argument.split("%")
                 set_code = split_argument[0]
@@ -274,7 +281,13 @@ class SettingsWindow(AdditionalWindow):
                 value = getattr(self, attribute).get()
                 set_code, doc_code, sheet_number = setting_name.split("%")
                 doc_changes = self.master.changes[set_code][doc_code]["changes"]
+                full_doc_changes = self.master.full_changes[set_code][doc_code]["changes"]
                 for change in doc_changes:
+                    if int(sheet_number) in change["pages"]:
+                        for i, pair in enumerate(change["sections_number"]):
+                            if pair[0] == int(sheet_number):
+                                change["sections_number"][i] = (int(sheet_number), value)
+                for change in full_doc_changes:
                     if int(sheet_number) in change["pages"]:
                         for i, pair in enumerate(change["sections_number"]):
                             if pair[0] == int(sheet_number):
@@ -285,7 +298,9 @@ class SettingsWindow(AdditionalWindow):
                 value = getattr(self, attribute).get()
                 set_code, doc_code, i = setting_name.split("%")
                 doc_changes = self.master.changes[set_code][doc_code]["changes"]
+                full_doc_changes = self.master.changes[set_code][doc_code]["changes"]
                 doc_changes[int(i)]["change_description_ru"] = value
+                full_doc_changes[int(i)]["change_description_ru"] = value
 
             if attribute.endswith("%change_description_en%var"):
                 setting_name = attribute[:-len("%change_description_en%var")]
@@ -293,6 +308,8 @@ class SettingsWindow(AdditionalWindow):
                 set_code, doc_code, i = setting_name.split("%")
                 doc_changes = self.master.changes[set_code][doc_code]["changes"]
                 doc_changes[int(i)]["change_description_en"] = value
+                full_doc_changes = self.master.changes[set_code][doc_code]["changes"]
+                full_doc_changes[int(i)]["change_description_en"] = value
 
             if attribute.endswith("%note_x%var"):
                 setting_name = attribute[:-len("%note_x%var")]
@@ -303,6 +320,11 @@ class SettingsWindow(AdditionalWindow):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         doc_geometry[i] = (int(sheet_number), (g[0], g[1], value, g[3], g[4]))
+                full_doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
+                for i, page in enumerate(doc_geometry):
+                    if int(sheet_number) == page[0]:
+                        g = page[1]
+                        full_doc_geometry[i] = (int(sheet_number), (g[0], g[1], value, g[3], g[4]))
 
             if attribute.endswith("%note_y%var"):
                 setting_name = attribute[:-len("%note_y%var")]
@@ -313,6 +335,11 @@ class SettingsWindow(AdditionalWindow):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         doc_geometry[i] = (int(sheet_number), (g[0], g[1], g[2], value, g[4]))
+                full_doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
+                for i, page in enumerate(doc_geometry):
+                    if int(sheet_number) == page[0]:
+                        g = page[1]
+                        full_doc_geometry[i] = (int(sheet_number), (g[0], g[1], g[2], value, g[4]))
 
             if attribute.endswith("%stamp_x%var"):
                 setting_name = attribute[:-len("%stamp_x%var")]
@@ -323,6 +350,11 @@ class SettingsWindow(AdditionalWindow):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         doc_geometry[i] = (int(sheet_number), (value, g[1], g[2], g[3], g[4]))
+                full_doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
+                for i, page in enumerate(doc_geometry):
+                    if int(sheet_number) == page[0]:
+                        g = page[1]
+                        full_doc_geometry[i] = (int(sheet_number), (value, g[1], g[2], g[3], g[4]))
 
             if attribute.endswith("%stamp_y%var"):
                 setting_name = attribute[:-len("%stamp_y%var")]
@@ -333,6 +365,11 @@ class SettingsWindow(AdditionalWindow):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         doc_geometry[i] = (int(sheet_number), (g[0], value, g[2], g[3], g[4]))
+                full_doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
+                for i, page in enumerate(doc_geometry):
+                    if int(sheet_number) == page[0]:
+                        g = page[1]
+                        full_doc_geometry[i] = (int(sheet_number), (g[0], value, g[2], g[3], g[4]))
 
             if attribute.endswith("%scale%var"):
                 setting_name = attribute[:-len("%scale%var")]
@@ -343,6 +380,11 @@ class SettingsWindow(AdditionalWindow):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         doc_geometry[i] = (int(sheet_number), (g[0], g[1], g[2], g[3], value))
+                full_doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
+                for i, page in enumerate(doc_geometry):
+                    if int(sheet_number) == page[0]:
+                        g = page[1]
+                        full_doc_geometry[i] = (int(sheet_number), (g[0], g[1], g[2], g[3], value))
 
             if attribute.endswith("%format_var"):
                 setting_name = attribute[:-len("%format_var")]
@@ -350,6 +392,17 @@ class SettingsWindow(AdditionalWindow):
                 set_code, doc_code = setting_name.split("%")
                 doc_info = self.master.changes[set_code][doc_code]
                 doc_info["page_size"] = value
+                full_doc_info = self.master.changes[set_code][doc_code]
+                full_doc_info["page_size"] = value
+
+            if attribute.endswith("%do_archive_note_var"):
+                setting_name = attribute[:-len("%do_archive_note_var")]
+                value = getattr(self, attribute).get()
+                set_code, doc_code = setting_name.split("%")
+                doc_info = self.master.changes[set_code][doc_code]
+                doc_info["has_archive_number"] = bool(value)
+                full_doc_info = self.master.changes[set_code][doc_code]
+                full_doc_info["has_archive_number"] = bool(value)
         self.master.save_set_changes()
         self.on_exit()
 
@@ -377,4 +430,5 @@ class SettingsWindow(AdditionalWindow):
                 ("%doc_scale%var", SIZES_COORDINATES[main_attribute_value]["scale"])
             ]:
                 getattr(self, set_code + "%" + doc_code + name).set(value)
+
         return tracer

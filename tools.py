@@ -66,8 +66,10 @@ def update_extracted_changes_with_saved_changes(saved_changes, extracted_changes
                         change["change_description_en"] = related_change["change_description_en"]
                         if "sections_number" in change.keys() and "sections_number" in related_change.keys():
                             change["sections_number"] = related_change["sections_number"]
-                doc_info["has_archive_number"] = doc_saved_info["has_archive_number"]
-                doc_info["page_size"] = doc_saved_info["page_size"]
+                if "has_archive_number" in doc_saved_info.keys():
+                    doc_info["has_archive_number"] = doc_saved_info["has_archive_number"]
+                if "page_size" in doc_saved_info.keys():
+                    doc_info["page_size"] = doc_saved_info["page_size"]
     return extracted_changes
 
 
