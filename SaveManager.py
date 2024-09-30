@@ -107,7 +107,7 @@ class SaveManager:
             read_info["changes"] = update_extracted_changes_with_saved_changes(read_info["changes"], extracted_changes)
             restored_info = read_info
             self.t.full_changes = original_read_info["changes"]
-            self.t.changes = get_latest_changes(self.t.full_changes)
+            self.t.changes = get_latest_changes(restored_info["changes"])  # TODO bug here
             for parameter in [
                 "set_name",
                 "change_notice_number",

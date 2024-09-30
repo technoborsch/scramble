@@ -93,3 +93,6 @@ if __name__ == "__main__":
     print(app.Application.Preferences.Files.PrinterConfigPath)
     print(app.Application.Preferences.Files.PrinterDescPath)
     print(app.Application.Preferences.Files.PrinterStyleSheetPath)
+    names_list = app.Application.ActiveDocument.ActiveLayout.GetCanonicalMediaNames()
+    for name in names_list:
+        print(name)
