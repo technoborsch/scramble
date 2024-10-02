@@ -89,5 +89,5 @@ def check():
 
 
 if __name__ == "__main__":
-    print(encode(1727729999, config.PROGRAM_VERSION))
+    print(encode(1730348871, config.PROGRAM_VERSION))
     print(config.SECRET)
