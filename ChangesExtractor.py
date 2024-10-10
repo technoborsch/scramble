@@ -3,7 +3,7 @@ import docx
 import pprint
 from copy import copy
 
-from config import DOC_SIZES_MAP, SIZES_COORDINATES, ARCHIVE_MAP
+from config import DOC_SIZES_MAP, FORMAT_INFO
 from tools import unzip_page_numbers
 
 
@@ -128,7 +128,7 @@ class ChangesExtractor:
     def _resolve_archive_number(doc_code):
         doc_letters = doc_code.split("-")[-1][:3]
         if doc_letters in DOC_SIZES_MAP.keys():
-            return ARCHIVE_MAP[DOC_SIZES_MAP[doc_letters]]
+            return FORMAT_INFO[DOC_SIZES_MAP[doc_letters]]["archive_stamp"]
         else:
             return False
 
@@ -149,7 +149,7 @@ class ChangesExtractor:
         changed_sheets.sort()
         geometry = []
         if doc_letters in DOC_SIZES_MAP.keys():
-            coordinates = copy(SIZES_COORDINATES[DOC_SIZES_MAP[doc_letters]])
+            coordinates = copy(FORMAT_INFO[DOC_SIZES_MAP[doc_letters]])
             for changed_sheet in changed_sheets:
                 geometry.append((changed_sheet, (
                     coordinates["stamp_x"],

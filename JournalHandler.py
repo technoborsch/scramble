@@ -1,13 +1,26 @@
+import os
 import openpyxl
 
 from config import JOURNAL_ADDRESS
 
 
+def find_journal():
+    if os.path.exists(JOURNAL_ADDRESS):
+        return JOURNAL_ADDRESS
+    else:
+        journal_folder_path = "\\".join(JOURNAL_ADDRESS.split("\\")[:-1])
+        journal_name = JOURNAL_ADDRESS.split("\\")[-1]
+        for file in os.listdir(journal_folder_path):
+            if not file.startswith("~$") and journal_name in file:
+                path = journal_folder_path + "\\" + file
+                return path
+
+
 class JournalHandler:
 
     def __init__(self):
-        self.path = JOURNAL_ADDRESS
-        self.wb = openpyxl.open(JOURNAL_ADDRESS, read_only=True)
+        self.path = find_journal()
+        self.wb = openpyxl.open(self.path, read_only=True)
         self.ws = self.wb["Журнал ИИ"]
 
     def get_change_notice_info(self, change_notice_number):

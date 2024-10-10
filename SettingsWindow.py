@@ -4,7 +4,7 @@ from tkinter import Frame
 from tkscrolledframe import ScrolledFrame
 
 from AdditionalWindow import AdditionalWindow
-from config import SIZES_COORDINATES, DOC_SIZES_MAP
+from config import FORMAT_INFO, DOC_SIZES_MAP
 
 
 class SettingsWindow(AdditionalWindow):
@@ -53,7 +53,7 @@ class SettingsWindow(AdditionalWindow):
                     doc_format_value = doc_info["page_size"]
                 setattr(self, doc_format_var, tk.StringVar(self.in_f, value=doc_format_value))
                 doc_format_combobox = set_code + "%" + doc_code + "%format_combobox"
-                setattr(self, doc_format_combobox, Combobox(self.in_f, values=list(SIZES_COORDINATES.keys()),
+                setattr(self, doc_format_combobox, Combobox(self.in_f, values=list(FORMAT_INFO.keys()),
                                                             textvariable=getattr(self, doc_format_var)))
                 getattr(self, doc_format_combobox).grid(row=this_row, column=7)
 
@@ -61,7 +61,7 @@ class SettingsWindow(AdditionalWindow):
 
                 doc_note_x = 0
                 if doc_letters in DOC_SIZES_MAP.keys():
-                    doc_note_x = SIZES_COORDINATES[DOC_SIZES_MAP[doc_letters]]["note_x"]
+                    doc_note_x = FORMAT_INFO[DOC_SIZES_MAP[doc_letters]]["note_x"]
                 doc_note_x_id = set_code + "%" + doc_code + "%" + "doc_note_x"
                 setattr(self, doc_note_x_id + "%" + "var", tk.StringVar(self.in_f))
                 getattr(self, doc_note_x_id + "%" + "var").set(doc_note_x)
@@ -74,7 +74,7 @@ class SettingsWindow(AdditionalWindow):
 
                 doc_note_y = 0
                 if doc_letters in DOC_SIZES_MAP.keys():
-                    doc_note_y = SIZES_COORDINATES[DOC_SIZES_MAP[doc_letters]]["note_y"]
+                    doc_note_y = FORMAT_INFO[DOC_SIZES_MAP[doc_letters]]["note_y"]
                 doc_note_y_id = set_code + "%" + doc_code + "%" + "doc_note_y"
                 setattr(self, doc_note_y_id + "%" + "var", tk.StringVar(self.in_f))
                 getattr(self, doc_note_y_id + "%" + "var").set(doc_note_y)
@@ -87,7 +87,7 @@ class SettingsWindow(AdditionalWindow):
 
                 doc_stamp_x = 0
                 if doc_letters in DOC_SIZES_MAP.keys():
-                    doc_stamp_x = SIZES_COORDINATES[DOC_SIZES_MAP[doc_letters]]["stamp_x"]
+                    doc_stamp_x = FORMAT_INFO[DOC_SIZES_MAP[doc_letters]]["stamp_x"]
                 doc_stamp_x_id = set_code + "%" + doc_code + "%" + "doc_stamp_x"
                 setattr(self, doc_stamp_x_id + "%" + "var", tk.StringVar(self.in_f))
                 getattr(self, doc_stamp_x_id + "%" + "var").set(doc_stamp_x)
@@ -100,7 +100,7 @@ class SettingsWindow(AdditionalWindow):
 
                 doc_stamp_y = 0
                 if doc_letters in DOC_SIZES_MAP.keys():
-                    doc_stamp_y = SIZES_COORDINATES[DOC_SIZES_MAP[doc_letters]]["stamp_y"]
+                    doc_stamp_y = FORMAT_INFO[DOC_SIZES_MAP[doc_letters]]["stamp_y"]
                 doc_stamp_y_id = set_code + "%" + doc_code + "%" + "doc_stamp_y"
                 setattr(self, doc_stamp_y_id + "%" + "var", tk.StringVar(self.in_f))
                 getattr(self, doc_stamp_y_id + "%" + "var").set(doc_stamp_y)
@@ -423,11 +423,11 @@ class SettingsWindow(AdditionalWindow):
             main_attribute_code = set_code + "%" + doc_code + "%format_var"
             main_attribute_value = getattr(self, main_attribute_code).get()
             for name, value in [
-                ("%doc_stamp_x%var", SIZES_COORDINATES[main_attribute_value]["stamp_x"]),
-                ("%doc_stamp_y%var", SIZES_COORDINATES[main_attribute_value]["stamp_y"]),
-                ("%doc_note_x%var", SIZES_COORDINATES[main_attribute_value]["note_x"]),
-                ("%doc_note_y%var", SIZES_COORDINATES[main_attribute_value]["note_y"]),
-                ("%doc_scale%var", SIZES_COORDINATES[main_attribute_value]["scale"])
+                ("%doc_stamp_x%var", FORMAT_INFO[main_attribute_value]["stamp_x"]),
+                ("%doc_stamp_y%var", FORMAT_INFO[main_attribute_value]["stamp_y"]),
+                ("%doc_note_x%var", FORMAT_INFO[main_attribute_value]["note_x"]),
+                ("%doc_note_y%var", FORMAT_INFO[main_attribute_value]["note_y"]),
+                ("%doc_scale%var", FORMAT_INFO[main_attribute_value]["scale"])
             ]:
                 getattr(self, set_code + "%" + doc_code + name).set(value)
 

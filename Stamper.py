@@ -8,7 +8,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from StampDrawer import StampDrawer
-from config import INITIAL_SIZES
+from config import FORMAT_INFO
 from tools import chunk_string, pack_change_info
 
 if hasattr(sys, "_MEIPASS"):
@@ -153,7 +153,7 @@ class Stamper:
         stamped_page.merge_translated_page(previous_number_page, self._to_su(9), self._to_su(66))
 
     def _get_calibration(self, stamped_page, page_size):
-        intended_height = self._to_su(INITIAL_SIZES[page_size]["height"])
+        intended_height = self._to_su(FORMAT_INFO[page_size]["height"])
         if page_size.endswith("V"):
             real_height = min(stamped_page.cropbox.width, stamped_page.cropbox.height)
         else:
