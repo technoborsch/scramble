@@ -48,7 +48,7 @@ class SaveManager:
         set_settings_path = os.path.join(self.t.directory_path_var.get(), "config")
         settings_exist = os.path.exists(set_settings_path)
         if not settings_exist:
-            self._fill_variables(set_settings_path)
+            self._fill_variables(set_settings_path, message_callback)
             self.t.refresh_journal_info()
         else:
             self._restore_variables(set_settings_path)
@@ -87,8 +87,13 @@ class SaveManager:
                     saved_info[set_code + "_rev"] = getattr(self.t, set_code + "_rev_var").get()
                 pickle.dump(saved_info, f)
 
-    def _fill_variables(self, path):
-        self.t.full_changes = self.extractor.extract(self.t.directory_path_var.get())
+    def _fill_variables(self, path, error_callback):
+        try:
+            self.t.full_changes = self.extractor.extract(self.t.directory_path_var.get())
+        except Exception:
+            filename = "".join(self.t.directory_path_var.get().split("\\")[:-1]).split(".")[0]
+            error_callback("Ошибка", f"Не удалось прочитать файл {filename}. Возможно, он открыт в другой программе. "
+                                     f"Закройте файл и попробуйте еще раз")
         self.t.changes = get_latest_changes(self.t.full_changes)
         self.t.place_set_entries()
         self.t.change_notice_number_var.set(re.findall(r"\d+", path.split("\\")[-3])[0])
@@ -107,7 +112,7 @@ class SaveManager:
             read_info["changes"] = update_extracted_changes_with_saved_changes(read_info["changes"], extracted_changes)
             restored_info = read_info
             self.t.full_changes = original_read_info["changes"]
-            self.t.changes = get_latest_changes(restored_info["changes"])  # TODO bug here
+            self.t.changes = get_latest_changes(restored_info["changes"])
             for parameter in [
                 "set_name",
                 "change_notice_number",

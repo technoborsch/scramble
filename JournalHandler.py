@@ -1,3 +1,4 @@
+import sys
 import os
 import openpyxl
 
@@ -9,11 +10,21 @@ def find_journal():
         return JOURNAL_ADDRESS
     else:
         journal_folder_path = "\\".join(JOURNAL_ADDRESS.split("\\")[:-1])
-        journal_name = JOURNAL_ADDRESS.split("\\")[-1]
-        for file in os.listdir(journal_folder_path):
-            if not file.startswith("~$") and journal_name in file:
-                path = journal_folder_path + "\\" + file
-                return path
+        journal_name = JOURNAL_ADDRESS.split("\\")[-1].split(".")[0]
+        path = None
+        if os.path.isdir(journal_folder_path):
+            for file in os.listdir(journal_folder_path):
+                if not file.startswith("~$") and journal_name in file:
+                    this_path = journal_folder_path + "\\" + file
+                    if path is None or os.path.getmtime(this_path) > os.path.getmtime(path):
+                        path = this_path
+        if path:
+            return path
+        elif hasattr(sys, "_MEIPASS"):
+            return os.path.join(sys._MEIPASS, "journal.xlsx")
+        else:
+            return "materials\\journal.xlsx"
+
 
 
 class JournalHandler:

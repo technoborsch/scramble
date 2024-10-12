@@ -231,7 +231,7 @@ class MainManager:
                         ok = False
         return ok, not_in_directory, more_sheets, less_sheets, pdf_paths
 
-    def update_directory_pdfs(self, directory_path):
+    def update_directory_pdfs(self, directory_path, error_callback):
         pdf_paths = []
         word_paths = []
         excel_paths = []
@@ -252,24 +252,40 @@ class MainManager:
                     and not filename.startswith("title")):
                 pdf = [x for x in pdf_paths if x.startswith(filename)]
                 if len(pdf) < 1 or len(pdf) == 1 and self._compare_file_mod_times(directory_path, word_file, pdf[0]):
-                    self.word_printer.convert(os.path.join(directory_path, word_file))
+                    try:
+                        self.word_printer.convert(os.path.join(directory_path, word_file))
+                    except Exception:
+                        error_callback("Ошибка", f"Не удалось напечатать файл {word_file}. "
+                                                 f"Возможно, он открыт в другой программе")
         for excel_file in excel_paths:
             filename = excel_file.replace(".xlsx", "").replace(".xls", "").replace(".XLS", "")
             pdf = [x for x in pdf_paths if x.startswith(filename)]
             if len(pdf) < 1 or len(pdf) == 1 and self._compare_file_mod_times(directory_path, excel_file, pdf[0]):
-                self.excel_printer.convert(os.path.join(directory_path, excel_file))
+                try:
+                    self.excel_printer.convert(os.path.join(directory_path, excel_file))
+                except Exception:
+                    error_callback("Ошибка", f"Не удалось напечатать файл {excel_file}. "
+                                             f"Возможно, он открыт в другой программе")
         for dwg_file in dwg_paths:
             filename = dwg_file.replace(".dwg", "")
             pdf = [x for x in pdf_paths if x.startswith(filename)]
             page_size = self._get_doc_size(filename)
             if len(pdf) == 1 and self._compare_file_mod_times(directory_path, dwg_file, pdf[0]):
                 output_path = pdf[0]
-                self.acad_printer.convert(os.path.join(directory_path, dwg_file),
-                                          os.path.join(directory_path, output_path), page_size)
+                try:
+                    self.acad_printer.convert(os.path.join(directory_path, dwg_file),
+                                            os.path.join(directory_path, output_path), page_size)
+                except Exception:
+                    error_callback("Ошибка", f"Не удалось напечатать файл {dwg_file}. "
+                                             f"Возможно, он открыт в другой программе")
             elif len(pdf) < 1:
                 output_path = filename + ".pdf"
-                self.acad_printer.convert(os.path.join(directory_path, dwg_file),
-                                          os.path.join(directory_path, output_path), page_size)
+                try:
+                    self.acad_printer.convert(os.path.join(directory_path, dwg_file),
+                                            os.path.join(directory_path, output_path), page_size)
+                except Exception:
+                    error_callback("Ошибка", f"Не удалось напечатать файл {dwg_file}. "
+                                             f"Возможно, он открыт в другой программе")
         self.word_printer.close()
         self.excel_printer.close()
         self.acad_printer.close_acad()

@@ -207,7 +207,7 @@ class Interface:
         self.main_manager.check_directory(messagebox.showerror, messagebox.showinfo)
 
     def _update_pdfs(self):
-        self.main_manager.update_directory_pdfs(self.directory_path_var.get())
+        self.main_manager.update_directory_pdfs(self.directory_path_var.get(), messagebox.showerror)
         messagebox.showinfo("Успешно", "Файлы PDF в папке ИИ обновлены")
 
     def _insert_change_notice(self, *args):
