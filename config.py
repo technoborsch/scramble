@@ -1,9 +1,15 @@
+import os
+import sys
+
+# Путь до иконки окна программы
 ICON_PATH = r"materials\icon.ico"
 
+# Конфигурация системы защиты
 SECRET = "ODMxNjc3ODQ4NzQyMzIwMjM0NzIx"
 CHAR_OFFSET = "24"
 PROGRAM_VERSION = 0.3
 
+# Список лиц, согласующих извещения об изменении
 AGREED_LIST = [
     "Алексеев А.В./ Alekseev A.V.",
     "Вяткин С.С./ Vyatkin S.S.",
@@ -22,6 +28,7 @@ AGREED_LIST = [
     "Кушнерёв Д.Ю./ Kushneryov D.Y."
 ]
 
+# Список лиц, проверяющих извещения об изменении
 CHECKED_LIST = [
     "Алексеев А.В./ Alekseev A.V.",
     "Вяткин С.С./ Vyatkin S.S.",
@@ -40,17 +47,20 @@ CHECKED_LIST = [
     "Кушнерёв Д.Ю./ Kushneryov D.Y."
 ]
 
+# Список нормоконтролеров
 EXAMINED_LIST = [
     "Полянская Е.Н./ Polianskaia E.N.",
     "Мязина Л.С./ Myazina L.S.",
     "Минаков С.А./ Minakov S.A.",
 ]
 
+# Список утверждающих лиц
 APPROVED_LIST = [
     "Гончарок А.А./ Goncharok A.A.",
     "Гнелицкий В.Г./ Gnelitskiy V.G."
 ]
 
+# Словарь привязки кодов документов к их типичным размерам
 DOC_SIZES_MAP = {
     "MAA": "A4",
     "MAB": "A4",
@@ -65,6 +75,8 @@ DOC_SIZES_MAP = {
     "MFA": "A1"
 }
 
+# Информация о доступных форматах листов - X, Y штампа, пробивки, ставить ли на лист архивник, масштаба штампа,
+# высоты и ширины листа, а также системное имя плоттера, который печатает данный формат листа.
 FORMAT_INFO = {
     "A4": {
         "stamp_x": 151,
@@ -332,6 +344,10 @@ FORMAT_INFO = {
     },
 }
 
+# Дефолтная геометрия, которая применяется к неизвестным документам
+DEFAULT_GEOMETRY = (100, 100, 80, 80, 1)
+
+# Словарь сопоставления системного имени типа изменения и его представления в штампе
 CHANGE_NAME_MAP = {
     "replace": "Зам.",
     "patch": "Изм.",
@@ -339,4 +355,14 @@ CHANGE_NAME_MAP = {
     "cancel": "Анн.",
 }
 
+# Адрес журнала в сетевой папке
 JOURNAL_ADDRESS = r"\\aep-dc\so\Журнал регистрации ИИ\Журнал регистрации ИИ.xlsx"
+
+# Конфигурация принтера автокад
+PLOT_CONFIG_PATH = os.path.join(os.getcwd(), r"materials\printer_config")
+PLOT_PRINTER_DESC_PATH = os.path.join(os.getcwd(), r"materials\printer_config\PMP Files")
+PLOT_STYLES_PATH = os.path.join(os.getcwd(), r"materials\printer_config\Plot Styles")
+if hasattr(sys, "_MEIPASS"):
+    PLOT_CONFIG_PATH = os.path.join(sys._MEIPASS, r"printer_config")
+    PLOT_PRINTER_DESC_PATH = os.path.join(sys._MEIPASS, r"printer_config\PMP Files")
+    PLOT_STYLES_PATH = os.path.join(sys._MEIPASS, r"printer_config\Plot Styles")
