@@ -39,7 +39,7 @@ class AcadPrinter:
             this_config.RefreshPlotDeviceInfo()
             this_config.UseStandardScale = False
             this_config.StandardScale = pyautocad.ACAD.acScaleToFit
-            this_config.PlotRotation = pyautocad.ACAD.ac0degrees
+            this_config.PlotRotation = pyautocad.ACAD.ac90degrees
             this_config.PlotType = pyautocad.ACAD.acExtents
             this_config.RefreshPlotDeviceInfo()
             this_config.CanonicalMediaName = config.FORMAT_INFO[doc_size]["plotter"]

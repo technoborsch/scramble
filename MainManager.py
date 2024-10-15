@@ -272,20 +272,20 @@ class MainManager:
             page_size = self._get_doc_size(filename)
             if len(pdf) == 1 and self._compare_file_mod_times(directory_path, dwg_file, pdf[0]):
                 output_path = pdf[0]
-                try:
-                    self.acad_printer.convert(os.path.join(directory_path, dwg_file),
-                                            os.path.join(directory_path, output_path), page_size)
-                except Exception:
-                    error_callback("Ошибка", f"Не удалось напечатать файл {dwg_file}. "
-                                             f"Возможно, он открыт в другой программе")
+                #try:
+                self.acad_printer.convert(os.path.join(directory_path, dwg_file),
+                                          os.path.join(directory_path, output_path), page_size)
+                #except Exception:
+                #    error_callback("Ошибка", f"Не удалось напечатать файл {dwg_file}. "
+                #                             f"Возможно, он открыт в другой программе")
             elif len(pdf) < 1:
                 output_path = filename + ".pdf"
-                try:
-                    self.acad_printer.convert(os.path.join(directory_path, dwg_file),
-                                            os.path.join(directory_path, output_path), page_size)
-                except Exception:
-                    error_callback("Ошибка", f"Не удалось напечатать файл {dwg_file}. "
-                                             f"Возможно, он открыт в другой программе")
+                #try:
+                self.acad_printer.convert(os.path.join(directory_path, dwg_file),
+                                         os.path.join(directory_path, output_path), page_size)
+                #except Exception:
+                #    error_callback("Ошибка", f"Не удалось напечатать файл {dwg_file}. "
+                #                             f"Возможно, он открыт в другой программе")
         self.word_printer.close()
         self.excel_printer.close()
         self.acad_printer.close_acad()
@@ -302,10 +302,21 @@ class MainManager:
                                                                   change_notice_path, set_start_page)
                 set_start_page += this_set_pages
 
+    def has_absent_formats(self):
+        result = False
+        for set_info in self.t.changes.values():
+            for doc_info in set_info.values():
+                if not doc_info["page_size"]:
+                    result = True
+                    break
+            if result:
+                break
+        return result
+
     @staticmethod
     def _compare_file_mod_times(directory_path, file1, file2):
         return os.path.getmtime(os.path.join(directory_path, file1)) \
-               > os.path.getmtime(os.path.join(directory_path, file2))
+            > os.path.getmtime(os.path.join(directory_path, file2))
 
     @staticmethod
     def _get_inconsistency_text(not_in_directory, more_sheets, less_sheets):
@@ -351,9 +362,9 @@ class MainManager:
 
     def _get_author_string(self):
         return self.t.last_name_ru_var.get() + " " + self.t.name_ru_var.get()[0] + "." \
-               + self.t.surname_ru_var.get()[0] \
-               + ". /\n" + self.t.last_name_en_var.get() + " " + self.t.name_en_var.get()[0] + "." \
-               + self.t.surname_en_var.get()[0] + "."
+            + self.t.surname_ru_var.get()[0] \
+            + ". /\n" + self.t.last_name_en_var.get() + " " + self.t.name_en_var.get()[0] + "." \
+            + self.t.surname_en_var.get()[0] + "."
 
     @staticmethod
     def _get_output_text(start_time, end_time):
@@ -570,5 +581,6 @@ class MainManager:
                     previous_list = self.journal.get_previous_change_notices_info(info["full_set_code"], row)
                     for i, change_info in enumerate(previous_list):
                         getattr(self.t, f"{i + 1}_last_name_ru_var").set(change_info["last_author"])
-                        getattr(self.t, f"{i + 1}_change_notice_date_var").set(change_info["release_date"].strftime("%d.%m.%Y"))
+                        getattr(self.t, f"{i + 1}_change_notice_date_var").set(
+                            change_info["release_date"].strftime("%d.%m.%Y"))
                         getattr(self.t, f"{i + 1}_change_notice_number_var").set(change_info["change_notice_number"])

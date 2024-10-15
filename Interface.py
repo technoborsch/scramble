@@ -128,7 +128,8 @@ class Interface:
 
         self.open_button = tk.Button(self.window, text="Указать", command=self.get_directory_path)
         self.open_button.grid(sticky="S", row=8, column=2)
-        self.refresh_journal_button = tk.Button(self.window, text="Обновить данные из журнала", command=self.refresh_journal_info)
+        self.refresh_journal_button = tk.Button(self.window, text="Обновить данные из журнала",
+                                                command=self.refresh_journal_info)
         self.main_set_name_label = tk.Label(self.window)
         self.main_set_name_entry = tk.Entry(self.window, width=50, justify='right',
                                             textvariable=self.set_name_var)
@@ -207,6 +208,10 @@ class Interface:
         self.main_manager.check_directory(messagebox.showerror, messagebox.showinfo)
 
     def _update_pdfs(self):
+        if self.main_manager.has_absent_formats():
+            messagebox.showerror("Ошибка", "Не для всех документов указан формат. Зайдите в настройки "
+                                           "и укажите формат для каждого документа")
+            return
         self.main_manager.update_directory_pdfs(self.directory_path_var.get(), messagebox.showerror)
         messagebox.showinfo("Успешно", "Файлы PDF в папке ИИ обновлены")
 
@@ -481,6 +486,7 @@ class Interface:
     def get_transliterate_function(last_name_ru_var, last_name_en_var):
         def tracer(*args):
             last_name_en_var.set(translit(last_name_ru_var.get(), "ru", reversed=True))
+
         return tracer
 
     def refresh_journal_info(self):
