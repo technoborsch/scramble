@@ -241,7 +241,7 @@ FORMAT_INFO = {
         "height": 420,
         "width": 594,
         "archive_stamp": True,
-        "plotter": "ISO_full_bleed_A2_(420.00_x_594.00_MM)"
+        "plotter": "ISO_full_bleed_A2_(594.00_x_420.00_MM)"
     },
     "A2x3": {
         "stamp_x": 341,

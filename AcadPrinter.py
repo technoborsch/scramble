@@ -25,10 +25,10 @@ class AcadPrinter:
         """
         self._setup()
         self.acad.Application.Documents.Open(dwg_path)
-        with applied_plotter_settings(self.acad):
-            printed = False
-            while not printed:
-                try:
+        printed = False
+        while not printed:
+            try:
+                with applied_plotter_settings(self.acad):
                     dwg = self.acad.ActiveDocument
                     plot = dwg.Plot
                     this_config = dwg.ActiveLayout
@@ -37,26 +37,23 @@ class AcadPrinter:
                     this_config.RefreshPlotDeviceInfo()
                     this_config.UseStandardScale = False
                     this_config.StandardScale = pyautocad.ACAD.acScaleToFit
-                    this_config.PlotRotation = pyautocad.ACAD.ac90degrees
+                    this_config.PlotRotation = pyautocad.ACAD.ac0degrees
                     this_config.PlotType = pyautocad.ACAD.acExtents
                     this_config.RefreshPlotDeviceInfo()
                     this_config.CanonicalMediaName = config.FORMAT_INFO[doc_size]["plotter"]
                     this_config.CenterPlot = True
                     this_config.PlotWithPlotStyles = True
                     this_config.StyleSheet = "akku-standard.ctb"
-
                     dwg.SetVariable("BACKGROUNDPLOT", 0)
-
                     this_config.RefreshPlotDeviceInfo()
-
                     plot.PlotToFile(
-                        output_path,
-                        this_config.ConfigName
+                       output_path,
+                       this_config.ConfigName
                     )
                     printed = True
-                except Exception:
-                    sleep(0.2)
-            return
+                return
+            except Exception:
+                sleep(0.2)
 
     def close_acad(self) -> None:
         """

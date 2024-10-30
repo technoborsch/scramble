@@ -71,46 +71,47 @@ class Stamper:
                 doc = PdfReader(pdf_path_list[0][0])
                 this_doc_page = 0
                 for doc_change in doc_changes:
-                    pages = doc_change["pages"]
-                    for page_number in pages:
-                        # geometry
-                        this_geometry = list(filter(lambda x: x[0] == page_number, geometry))[0][1]
-                        stamp_x = this_geometry[0]
-                        stamp_y = this_geometry[1]
-                        note_x = this_geometry[2]
-                        note_y = this_geometry[3]
-                        scale = this_geometry[4]
-                        # stamp
-                        this_stamp_path, number_of_changes = self._resolve_stamp(
-                            directory_path, doc_change, page_number, previous_changes
-                        )
+                    if doc_change["change_type"] != "cancel":
+                        pages = doc_change["pages"]
+                        for page_number in pages:
+                            # geometry
+                            this_geometry = list(filter(lambda x: x[0] == page_number, geometry))[0][1]
+                            stamp_x = this_geometry[0]
+                            stamp_y = this_geometry[1]
+                            note_x = this_geometry[2]
+                            note_y = this_geometry[3]
+                            scale = this_geometry[4]
+                            # stamp
+                            this_stamp_path, number_of_changes = self._resolve_stamp(
+                                directory_path, doc_change, page_number, previous_changes
+                            )
 
-                        # stamped page
-                        if len(doc.pages) >= int(doc_info["number_of_sheets"]):
-                            stamped_page = doc.pages[page_number - 1]
-                        else:
-                            stamped_page = doc.pages[this_doc_page]
-                        calibration = self._get_calibration(stamped_page, doc_info["page_size"])
+                            # stamped page
+                            if len(doc.pages) >= int(doc_info["number_of_sheets"]):
+                                stamped_page = doc.pages[page_number - 1]
+                            else:
+                                stamped_page = doc.pages[this_doc_page]
+                            calibration = self._get_calibration(stamped_page, doc_info["page_size"])
 
-                        if do_stamp:
-                            s_x, s_y = self._stamp_page(this_stamp_path, stamped_page, calibration, stamp_x, stamp_y, scale)
+                            if do_stamp:
+                                s_x, s_y = self._stamp_page(this_stamp_path, stamped_page, calibration, stamp_x, stamp_y, scale)
 
-                            self._sign(stamped_page, author_signature, s_x, s_y,
-                                       self._to_su(50), self._to_su(16 + 10 * (number_of_changes -1)), self._to_su(17), self._to_su(8), scale)
+                                self._sign(stamped_page, author_signature, s_x, s_y,
+                                           self._to_su(50), self._to_su(16 + 10 * (number_of_changes -1)), self._to_su(17), self._to_su(8), scale)
 
-                            self._sign(stamped_page, nesterov_sign, s_x, s_y,
-                                       self._to_su(67), self._to_su(16 + 10 * (number_of_changes - 1)), self._to_su(17), self._to_su(8), scale)
+                                self._sign(stamped_page, nesterov_sign, s_x, s_y,
+                                           self._to_su(67), self._to_su(16 + 10 * (number_of_changes - 1)), self._to_su(17), self._to_su(8), scale)
 
-                        if do_note and int(doc_info["set_position"]) != 1:
-                            note_text = f"{set_code}/{doc_info['set_position']}.{page_number}"
-                            self._add_note(stamped_page, note_text, 3.5, note_x, note_y)  # TODO different sizes for notes
-                        if do_archive_note and bool(doc_info["has_archive_number"]):
-                            self._add_archive_note(stamped_page, archive_number, archive_date, previous_set)  # TODO иногда плохо расставляет, нужно добавить логику с "Номером пакета" в файлах MDB
-                        if len(doc.pages) >= int(doc_info["number_of_sheets"]):
-                            self.output.add_page(doc.pages[page_number - 1])
-                        else:
-                            self.output.add_page(doc.pages[this_doc_page])
-                            this_doc_page += 1
+                            if do_note and int(doc_info["set_position"]) != 1:
+                                note_text = f"{set_code}/{doc_info['set_position']}.{page_number}"
+                                self._add_note(stamped_page, note_text, 3.5, note_x, note_y)  # TODO different sizes for notes
+                            if do_archive_note and bool(doc_info["has_archive_number"]):
+                                self._add_archive_note(stamped_page, archive_number, archive_date, previous_set)  # TODO иногда плохо расставляет, нужно добавить логику с "Номером пакета" в файлах MDB
+                            if len(doc.pages) >= int(doc_info["number_of_sheets"]):
+                                self.output.add_page(doc.pages[page_number - 1])
+                            else:
+                                self.output.add_page(doc.pages[this_doc_page])
+                                this_doc_page += 1
             else:
                 pass  # TODO make process multi-pdf docs
 
@@ -154,7 +155,7 @@ class Stamper:
 
     def _get_calibration(self, stamped_page, page_size):
         intended_height = self._to_su(FORMAT_INFO[page_size]["height"])
-        if page_size.endswith("V"):
+        if not page_size.startswith("A4"):
             real_height = min(stamped_page.cropbox.width, stamped_page.cropbox.height)
         else:
             real_height = max(stamped_page.cropbox.width, stamped_page.cropbox.height)

@@ -204,10 +204,10 @@ class MainManager:
                 this_set = list(filter(lambda x: this_doc_code in x[1].keys(), changes.items()))[0][0]
                 total_pages = int(changes[this_set][this_doc_code]["number_of_sheets"])
                 for change in changes[this_set][this_doc_code]["changes"]:
-                    if change["change_type"] == "cancel":
-                        cancel_pages += change["pages"]
-                    else:
-                        pages += change["pages"]
+                    # if change["change_type"] == "cancel":
+                    #     cancel_pages += change["pages"]
+                    # else:
+                    pages += change["pages"]
                 if len(actual_filepath_list) == 1:
                     doc = PdfReader(actual_filepath_list[0][0])
                     if len(doc.pages) > total_pages + len(cancel_pages):
@@ -396,7 +396,8 @@ class MainManager:
         for _, set_info in self.t.changes.items():
             for _, document_info in set_info.items():
                 for change in document_info["changes"]:
-                    num += len(change["pages"])
+                    if change["change_type"] != "cancel":
+                        num += len(change["pages"])
         return num
 
     @staticmethod
@@ -418,9 +419,16 @@ class MainManager:
 
     @staticmethod
     def _add_months(current_date, months_to_add):
-        new_date = datetime(current_date.year + (current_date.month + months_to_add - 1) // 12,
-                            (current_date.month + months_to_add - 1) % 12 + 1,
-                            current_date.day, current_date.hour, current_date.minute, current_date.second)
+        num_of_days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        day = current_date.day
+        month = current_date.month
+        year = current_date.year
+        if day > num_of_days[current_date.month % 12]:
+            month += 1
+            day = day - num_of_days[current_date.month % 12]
+        new_date = datetime(year + (month + months_to_add - 1) // 12,
+                            (month + months_to_add - 1) % 12 + 1,
+                            day, current_date.hour, current_date.minute, current_date.second)
         return new_date
 
     def _directory_has_old_pdfs(self, directory_path):
@@ -584,3 +592,8 @@ class MainManager:
                         getattr(self.t, f"{i + 1}_change_notice_date_var").set(
                             change_info["release_date"].strftime("%d.%m.%Y"))
                         getattr(self.t, f"{i + 1}_change_notice_number_var").set(change_info["change_notice_number"])
+
+
+if __name__ == "__main__":
+    manager = MainManager(None)
+    print(manager._add_months(datetime.strptime("31.12.2024", "%d.%m.%Y"), 1))

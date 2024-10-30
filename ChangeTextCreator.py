@@ -116,14 +116,14 @@ class ChangeTextCreator:
                     if len(cancel_pages) == 1:
                         russian_text += "\t- лист " \
                                         + str(document_info['set_position']) + "." + str(cancel_pages[0]) \
-                                        + f" – аннулирован{description_ru};\n"
+                                        + f" – аннулирован{description_ru}\n"
                         english_text += "\t- sheet " \
                                         + str(document_info['set_position']) + "." + str(cancel_pages[0]) \
-                                        + f" – cancelled{description_en};\n"
+                                        + f" – cancelled{description_en}\n"
                     else:
                         zipped_pages = zip_pages(document_info["set_position"], cancel_pages)
-                        russian_text += f"\t- листы {zipped_pages} – листы аннулированы{description_ru};\n"
-                        english_text += f"\t- sheets {zipped_pages} – sheets were cancelled{description_en};\n"
+                        russian_text += f"\t- листы {zipped_pages} – листы аннулированы{description_ru}\n"
+                        english_text += f"\t- sheets {zipped_pages} – sheets were cancelled{description_en}\n"
 
                 if new_pages:
                     description_ru = ""
