@@ -368,7 +368,7 @@ class Interface:
         self.save_manager.restore_settings()
 
     def _restore_set_changes(self):
-        self.save_manager.restore_set_settings(messagebox)
+        self.save_manager.restore_set_settings(messagebox.showerror)
 
     def save_set_changes(self):
         self.save_manager.save_set_settings()

@@ -91,7 +91,7 @@ class SaveManager:
         try:
             self.t.full_changes = self.extractor.extract(self.t.directory_path_var.get())
         except Exception:
-            filename = "".join(self.t.directory_path_var.get().split("\\")[:-1]).split(".")[0]
+            filename = "".join(self.t.directory_path_var.get().split("\\")[:-1]).split(".")[1]
             error_callback("Ошибка", f"Не удалось прочитать файл {filename}. Возможно, он открыт в другой программе. "
                                      f"Закройте файл и попробуйте еще раз")
         self.t.changes = get_latest_changes(self.t.full_changes)

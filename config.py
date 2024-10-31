@@ -5,9 +5,9 @@ import sys
 ICON_PATH = r"materials\icon.ico"
 
 # Конфигурация системы защиты
-SECRET = "ODMxNjc3ODQ4NzQyMzIwMjM0NzIx"
+SECRET = "ODAwMTE1MTYzODkyOTIyMjM0NzIx"
 CHAR_OFFSET = "24"
-PROGRAM_VERSION = 0.3
+PROGRAM_VERSION = 0.4
 
 # Список лиц, согласующих извещения об изменении
 AGREED_LIST = [
