@@ -1,4 +1,5 @@
 import tkinter as tk
+from copy import deepcopy
 from tkinter.ttk import Combobox, Checkbutton
 from tkinter import Frame
 from tkscrolledframe import ScrolledFrame
@@ -281,6 +282,8 @@ class SettingsWindow(AdditionalWindow):
                 value = getattr(self, attribute).get()
                 set_code, doc_code, sheet_number = setting_name.split("%")
                 doc_changes = self.master.changes[set_code][doc_code]["changes"]
+                if doc_code not in self.master.full_changes[set_code]:
+                    self.master.full_changes[set_code][doc_code] = deepcopy(self.master.changes[set_code][doc_code])
                 full_doc_changes = self.master.full_changes[set_code][doc_code]["changes"]
                 for change in doc_changes:
                     if int(sheet_number) in change["pages"]:
@@ -298,6 +301,8 @@ class SettingsWindow(AdditionalWindow):
                 value = getattr(self, attribute).get()
                 set_code, doc_code, i = setting_name.split("%")
                 doc_changes = self.master.changes[set_code][doc_code]["changes"]
+                if doc_code not in self.master.full_changes[set_code]:
+                    self.master.full_changes[set_code][doc_code] = deepcopy(self.master.changes[set_code][doc_code])
                 full_doc_changes = self.master.full_changes[set_code][doc_code]["changes"]
                 doc_changes[int(i)]["change_description_ru"] = value
                 full_doc_changes[int(i)]["change_description_ru"] = value
@@ -308,6 +313,8 @@ class SettingsWindow(AdditionalWindow):
                 set_code, doc_code, i = setting_name.split("%")
                 doc_changes = self.master.changes[set_code][doc_code]["changes"]
                 doc_changes[int(i)]["change_description_en"] = value
+                if doc_code not in self.master.full_changes[set_code]:
+                    self.master.full_changes[set_code][doc_code] = deepcopy(self.master.changes[set_code][doc_code])
                 full_doc_changes = self.master.full_changes[set_code][doc_code]["changes"]
                 full_doc_changes[int(i)]["change_description_en"] = value
 
@@ -315,13 +322,15 @@ class SettingsWindow(AdditionalWindow):
                 setting_name = attribute[:-len("%note_x%var")]
                 value = float(getattr(self, attribute).get())
                 set_code, doc_code, sheet_number = setting_name.split("%")
+                if doc_code not in self.master.full_changes[set_code]:
+                    self.master.full_changes[set_code][doc_code] = deepcopy(self.master.changes[set_code][doc_code])
                 doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
                 for i, page in enumerate(doc_geometry):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         doc_geometry[i] = (int(sheet_number), (g[0], g[1], value, g[3], g[4]))
                 full_doc_geometry = self.master.full_changes[set_code][doc_code]["geometry"]
-                for i, page in enumerate(doc_geometry):
+                for i, page in enumerate(full_doc_geometry):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         full_doc_geometry[i] = (int(sheet_number), (g[0], g[1], value, g[3], g[4]))
@@ -330,13 +339,15 @@ class SettingsWindow(AdditionalWindow):
                 setting_name = attribute[:-len("%note_y%var")]
                 value = float(getattr(self, attribute).get())
                 set_code, doc_code, sheet_number = setting_name.split("%")
+                if doc_code not in self.master.full_changes[set_code]:
+                    self.master.full_changes[set_code][doc_code] = deepcopy(self.master.changes[set_code][doc_code])
                 doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
                 for i, page in enumerate(doc_geometry):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         doc_geometry[i] = (int(sheet_number), (g[0], g[1], g[2], value, g[4]))
                 full_doc_geometry = self.master.full_changes[set_code][doc_code]["geometry"]
-                for i, page in enumerate(doc_geometry):
+                for i, page in enumerate(full_doc_geometry):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         full_doc_geometry[i] = (int(sheet_number), (g[0], g[1], g[2], value, g[4]))
@@ -345,13 +356,15 @@ class SettingsWindow(AdditionalWindow):
                 setting_name = attribute[:-len("%stamp_x%var")]
                 value = float(getattr(self, attribute).get())
                 set_code, doc_code, sheet_number = setting_name.split("%")
+                if doc_code not in self.master.full_changes[set_code]:
+                    self.master.full_changes[set_code][doc_code] = deepcopy(self.master.changes[set_code][doc_code])
                 doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
                 for i, page in enumerate(doc_geometry):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         doc_geometry[i] = (int(sheet_number), (value, g[1], g[2], g[3], g[4]))
                 full_doc_geometry = self.master.full_changes[set_code][doc_code]["geometry"]
-                for i, page in enumerate(doc_geometry):
+                for i, page in enumerate(full_doc_geometry):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         full_doc_geometry[i] = (int(sheet_number), (value, g[1], g[2], g[3], g[4]))
@@ -360,13 +373,15 @@ class SettingsWindow(AdditionalWindow):
                 setting_name = attribute[:-len("%stamp_y%var")]
                 value = float(getattr(self, attribute).get())
                 set_code, doc_code, sheet_number = setting_name.split("%")
+                if doc_code not in self.master.full_changes[set_code]:
+                    self.master.full_changes[set_code][doc_code] = deepcopy(self.master.changes[set_code][doc_code])
                 doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
                 for i, page in enumerate(doc_geometry):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         doc_geometry[i] = (int(sheet_number), (g[0], value, g[2], g[3], g[4]))
                 full_doc_geometry = self.master.full_changes[set_code][doc_code]["geometry"]
-                for i, page in enumerate(doc_geometry):
+                for i, page in enumerate(full_doc_geometry):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         full_doc_geometry[i] = (int(sheet_number), (g[0], value, g[2], g[3], g[4]))
@@ -375,13 +390,15 @@ class SettingsWindow(AdditionalWindow):
                 setting_name = attribute[:-len("%scale%var")]
                 value = float(getattr(self, attribute).get())
                 set_code, doc_code, sheet_number = setting_name.split("%")
+                if doc_code not in self.master.full_changes[set_code]:
+                    self.master.full_changes[set_code][doc_code] = deepcopy(self.master.changes[set_code][doc_code])
                 doc_geometry = self.master.changes[set_code][doc_code]["geometry"]
                 for i, page in enumerate(doc_geometry):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         doc_geometry[i] = (int(sheet_number), (g[0], g[1], g[2], g[3], value))
                 full_doc_geometry = self.master.full_changes[set_code][doc_code]["geometry"]
-                for i, page in enumerate(doc_geometry):
+                for i, page in enumerate(full_doc_geometry):
                     if int(sheet_number) == page[0]:
                         g = page[1]
                         full_doc_geometry[i] = (int(sheet_number), (g[0], g[1], g[2], g[3], value))
@@ -390,6 +407,8 @@ class SettingsWindow(AdditionalWindow):
                 setting_name = attribute[:-len("%format_var")]
                 value = getattr(self, attribute).get()
                 set_code, doc_code = setting_name.split("%")
+                if doc_code not in self.master.full_changes[set_code]:
+                    self.master.full_changes[set_code][doc_code] = deepcopy(self.master.changes[set_code][doc_code])
                 doc_info = self.master.changes[set_code][doc_code]
                 doc_info["page_size"] = value
                 full_doc_info = self.master.full_changes[set_code][doc_code]
@@ -399,6 +418,8 @@ class SettingsWindow(AdditionalWindow):
                 setting_name = attribute[:-len("%do_archive_note_var")]
                 value = getattr(self, attribute).get()
                 set_code, doc_code = setting_name.split("%")
+                if doc_code not in self.master.full_changes[set_code]:
+                    self.master.full_changes[set_code][doc_code] = deepcopy(self.master.changes[set_code][doc_code])
                 doc_info = self.master.changes[set_code][doc_code]
                 doc_info["has_archive_number"] = bool(value)
                 full_doc_info = self.master.full_changes[set_code][doc_code]

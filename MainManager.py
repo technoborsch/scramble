@@ -90,7 +90,7 @@ class MainManager:
             text = self._get_old_pdfs_text(old_pdfs, no_originals)
             if not dialog_callback("Ошибка", text):
                 return
-        start_time = time.time()
+        start_time = time.perf_counter()
         stamped_sheets_pdf_path = os.path.join(self.t.directory_path_var.get(), "result.pdf")
         self.stamp_directory(
             stamped_sheets_pdf_path,
@@ -130,7 +130,7 @@ class MainManager:
         # os.remove(title_pdf_path)
         self._reduce_pdf_size(cn_path)
         # self._create_originals_archive() TODO error
-        end_time = time.time()
+        end_time = time.perf_counter()
         text = self._get_output_text(start_time, end_time)
         info_callback("Успешно!", f"{text}")
 
@@ -374,9 +374,9 @@ class MainManager:
         output_text += "ИИ успешно собрана.\n Время сборки: "
         if cn_time_minutes:
             minutes_remainder = cn_time_minutes % 10
-            if minutes_remainder % 10 == 1:
+            if minutes_remainder == 1:
                 output_text += f"{cn_time_minutes} минута"
-            elif minutes_remainder == 2 or minutes_remainder == 3 or minutes_remainder == 4:
+            elif minutes_remainder < 5:
                 output_text += f"{cn_time_minutes} минуты"
             else:
                 output_text += f"{cn_time_minutes} минут"
@@ -385,7 +385,7 @@ class MainManager:
             seconds_remainder = cn_time_seconds % 10
             if seconds_remainder == 1:
                 output_text += f"{cn_time_minutes} секунда"
-            elif seconds_remainder == 2 or seconds_remainder == 3 or seconds_remainder == 4:
+            elif seconds_remainder < 5:
                 output_text += f"{cn_time_minutes} секунды"
             else:
                 output_text += f"{cn_time_seconds} секунд"
